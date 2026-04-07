@@ -9,7 +9,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "messages": [
       {
         "role": "user",
@@ -27,7 +27,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "messages": [
       {
         "role": "user",
@@ -45,7 +45,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-image",
+    "model": "gemini-2.5-flash-image-preview",
     "messages": [
       {
         "role": "user",
@@ -63,7 +63,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-image",
+    "model": "gemini-2.5-flash-image-preview",
     "messages": [
       {
         "role": "user",
@@ -81,7 +81,7 @@ curl -X POST http://localhost:7860/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "input": "Summarize the main idea of functional programming in 3 sentences.",
     "stream": false
   }'
@@ -94,7 +94,7 @@ curl -X POST http://localhost:7860/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "input": [
       {
         "role": "user",
@@ -113,7 +113,7 @@ curl -X POST http://localhost:7860/v1/responses \
 ## ♊ Gemini Native API Format
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:generateContent \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -133,7 +133,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:generateC
 ### 🌊 Streaming Content Generation
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -153,7 +153,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:streamGen
 ### 🖼️ Generate Image [Official Docs](https://ai.google.dev/gemini-api/docs/image-generation)
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:generateContent \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -173,7 +173,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:generate
 #### 🫗 Stream Generation
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -189,50 +189,6 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:streamGe
     ]
   }'
 ```
-
-### 🎨 Imagen (Image Generation) [Official Docs](https://ai.google.dev/gemini-api/docs/imagen)
-
-Use the `imagen` series models to generate images through the `:predict` endpoint.
-
-#### Basic Image Generation
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/imagen-4.0-generate-001:predict \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "instances": [
-      {
-        "prompt": "Robot holding a red skateboard"
-      }
-    ],
-    "parameters": {
-      "sampleCount": 1
-    }
-  }'
-```
-
-#### Generate Multiple Images
-
-Adjust `sampleCount` to generate multiple images at once (maximum 4).
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/imagen-4.0-generate-001:predict \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "instances": [
-      {
-        "prompt": "A futuristic city at sunset with flying cars"
-      }
-    ],
-    "parameters": {
-      "sampleCount": 4
-    }
-  }'
-```
-
-> 💡 **Tip**: Imagen responses return base64-encoded image data. Each generated image will be included in the `predictions` array.
 
 ### 🎤 TTS (Text-to-Speech) [Official Docs](https://ai.google.dev/gemini-api/docs/speech-generation)
 
@@ -340,66 +296,6 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 
 > 💡 **Tip**: TTS responses return base64-encoded audio data in `audio/L16;codec=pcm;rate=24000` format. You need to decode and convert it to WAV format for playback.
 
-### 📐 Text Embeddings
-
-Use the `batchEmbedContents` endpoint to generate text embedding vectors.
-
-> ⚠️ **Note**: The `embedContent` endpoint is no longer supported. Please use `batchEmbedContents` instead.
-
-#### Single Text Embedding
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-embedding-001:batchEmbedContents \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "requests": [
-      {
-        "model": "models/gemini-embedding-001",
-        "content": {
-          "parts": [
-            {
-              "text": "What is artificial intelligence?"
-            }
-          ]
-        }
-      }
-    ]
-  }'
-```
-
-#### Batch Text Embeddings
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-embedding-001:batchEmbedContents \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "requests": [
-      {
-        "model": "models/gemini-embedding-001",
-        "content": {
-          "parts": [
-            {
-              "text": "What is artificial intelligence?"
-            }
-          ]
-        }
-      },
-      {
-        "model": "models/gemini-embedding-001",
-        "content": {
-          "parts": [
-            {
-              "text": "What is the difference between machine learning and deep learning?"
-            }
-          ]
-        }
-      }
-    ]
-  }'
-```
-
 ## 👤 Anthropic Compatible API
 
 ```bash
@@ -408,7 +304,7 @@ curl -X POST http://localhost:7860/v1/messages \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "max_tokens": 1024,
     "messages": [
       {
@@ -428,7 +324,7 @@ curl -X POST http://localhost:7860/v1/messages \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "max_tokens": 1024,
     "messages": [
       {

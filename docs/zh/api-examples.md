@@ -9,7 +9,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "messages": [
       {
         "role": "user",
@@ -27,7 +27,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "messages": [
       {
         "role": "user",
@@ -45,7 +45,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-image",
+    "model": "gemini-2.5-flash-image-preview",
     "messages": [
       {
         "role": "user",
@@ -63,7 +63,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-image",
+    "model": "gemini-2.5-flash-image-preview",
     "messages": [
       {
         "role": "user",
@@ -81,7 +81,7 @@ curl -X POST http://localhost:7860/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "input": "请用三句话总结函数式编程的核心思想。",
     "stream": false
   }'
@@ -94,7 +94,7 @@ curl -X POST http://localhost:7860/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "input": [
       {
         "role": "user",
@@ -113,7 +113,7 @@ curl -X POST http://localhost:7860/v1/responses \
 ## ♊ Gemini 原生 API 格式
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:generateContent \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -133,7 +133,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:generateC
 ### 🌊 使用流式响应
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -153,7 +153,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-lite:streamGen
 ### 🖼️ 生成图片 [官方文档](https://ai.google.dev/gemini-api/docs/image-generation?hl=zh-cn)
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:generateContent \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -173,7 +173,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:generate
 #### 🫗 流式生成
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -190,47 +190,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image:streamGe
   }'
 ```
 
-### 🎨 Imagen 图像生成 [官方文档](https://ai.google.dev/gemini-api/docs/imagen?hl=zh-cn)
-
-使用 `imagen` 系列模型通过 `:predict` 端点生成图像。
-
-#### 基础图像生成
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/imagen-4.0-generate-001:predict \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "instances": [
-      {
-        "prompt": "机器人手持红色滑板"
-      }
-    ],
-    "parameters": {
-      "sampleCount": 1
-    }
-  }'
-```
-
-#### 批量生成多张图像
-
-调整 `sampleCount` 可一次生成多张图像（最多 4 张）。
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/imagen-4.0-generate-001:predict \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "instances": [
-      {
-        "prompt": "夕阳下的未来城市，天空中有飞行汽车"
-      }
-    ],
-    "parameters": {
-      "sampleCount": 4
-    }
-  }'
-```
+````
 
 > 💡 **提示**：Imagen 响应返回的是 base64 编码的图像数据，每张生成的图像都会包含在 `predictions` 数组中。
 
@@ -257,7 +217,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
       "responseModalities": ["AUDIO"]
     }
   }'
-```
+````
 
 #### 指定声音
 
@@ -342,64 +302,6 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 
 ### 📐 文本嵌入 (Embeddings)
 
-使用 `batchEmbedContents` 端点生成文本嵌入向量。
-
-> ⚠️ **注意**：`embedContent` 端点已不再支持，请使用 `batchEmbedContents` 端点。
-
-#### 单个文本嵌入
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-embedding-001:batchEmbedContents \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "requests": [
-      {
-        "model": "models/gemini-embedding-001",
-        "content": {
-          "parts": [
-            {
-              "text": "什么是人工智能？"
-            }
-          ]
-        }
-      }
-    ]
-  }'
-```
-
-#### 批量文本嵌入
-
-```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-embedding-001:batchEmbedContents \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer your-api-key-1" \
-  -d '{
-    "requests": [
-      {
-        "model": "models/gemini-embedding-001",
-        "content": {
-          "parts": [
-            {
-              "text": "什么是人工智能？"
-            }
-          ]
-        }
-      },
-      {
-        "model": "models/gemini-embedding-001",
-        "content": {
-          "parts": [
-            {
-              "text": "机器学习和深度学习有什么区别？"
-            }
-          ]
-        }
-      }
-    ]
-  }'
-```
-
 ## 👤 Anthropic 兼容 API
 
 ```bash
@@ -408,7 +310,7 @@ curl -X POST http://localhost:7860/v1/messages \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "max_tokens": 1024,
     "messages": [
       {
@@ -428,7 +330,7 @@ curl -X POST http://localhost:7860/v1/messages \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \
   -d '{
-    "model": "gemini-2.5-flash-lite",
+    "model": "gemini-2.5-flash",
     "max_tokens": 1024,
     "messages": [
       {
