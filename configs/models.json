@@ -61,24 +61,6 @@
             "supportedGenerationMethods": ["predict"]
         },
         {
-            "name": "models/imagen-4.0-ultra-generate-001",
-            "version": "001",
-            "displayName": "Imagen 4 Ultra",
-            "description": "Vertex served Imagen 4.0 ultra model",
-            "inputTokenLimit": 480,
-            "outputTokenLimit": 8192,
-            "supportedGenerationMethods": ["predict"]
-        },
-        {
-            "name": "models/imagen-4.0-fast-generate-001",
-            "version": "001",
-            "displayName": "Imagen 4 Fast",
-            "description": "Vertex served Imagen 4.0 Fast model",
-            "inputTokenLimit": 480,
-            "outputTokenLimit": 8192,
-            "supportedGenerationMethods": ["predict"]
-        },
-        {
             "name": "models/gemini-2.5-flash-image-preview",
             "version": "preview",
             "displayName": "Gemini 2.5 Flash Image Preview",
