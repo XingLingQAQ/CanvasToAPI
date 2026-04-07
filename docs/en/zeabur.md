@@ -35,7 +35,7 @@ This guide will help you deploy the `aistudio-to-api` service on [Zeabur](https:
 
    **Port**:
    - Click the **Add Port** button.
-   - **Port Number**: `7860`
+   - **Port Number**: `7861`
    - **Port Type**: `HTTP`
 
    **Volumes**:

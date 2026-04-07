@@ -1545,7 +1545,7 @@ class BrowserManager {
             args: this.launchArgs,
             executablePath: this.browserExecutablePath,
             firefoxUserPrefs: this.firefoxUserPrefs,
-            headless: false,
+            headless: true,
             ...(proxyConfig ? { proxy: proxyConfig } : {}),
         });
         this.browser.on("disconnected", () => {

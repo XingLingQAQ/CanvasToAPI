@@ -28,23 +28,23 @@ module.exports = defineConfig({
             // Proxy API requests to the Express backend
             "/api": {
                 changeOrigin: true,
-                target: "http://localhost:7860",
+                target: "http://localhost:7861",
             },
             "/health": {
                 changeOrigin: true,
-                target: "http://localhost:7860",
+                target: "http://localhost:7861",
             },
             "/locales": {
                 changeOrigin: true,
-                target: "http://localhost:7860",
+                target: "http://localhost:7861",
             },
             "/login": {
                 changeOrigin: true,
-                target: "http://localhost:7860",
+                target: "http://localhost:7861",
             },
             "/logout": {
                 changeOrigin: true,
-                target: "http://localhost:7860",
+                target: "http://localhost:7861",
             },
         },
         strictPort: true,

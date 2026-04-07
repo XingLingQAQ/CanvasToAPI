@@ -47,9 +47,9 @@ A tool that wraps Google AI Studio web interface to provide OpenAI API, Gemini A
    npm start
    ```
 
-   The API server will be available at `http://localhost:7860`
+   The API server will be available at `http://localhost:7861`
 
-   After the service starts, you can access `http://localhost:7860` in your browser to open the web console homepage, where you can view account status and service status.
+   After the service starts, you can access `http://localhost:7861` in your browser to open the web console homepage, where you can view account status and service status.
 
 5. Update to the latest version (for existing local deployments):
 
@@ -71,7 +71,7 @@ Deploy using Docker without pre-extracting authentication credentials.
 ```bash
 docker run -d \
   --name aistudio-to-api \
-  -p 7860:7860 \
+  -p 7861:7861 \
   -v /path/to/auth:/app/configs/auth \
   -e API_KEYS=your-api-key-1,your-api-key-2 \
   -e TZ=America/New_York \
@@ -83,7 +83,7 @@ docker run -d \
 
 Parameters:
 
-- `-p 7860:7860`: API server port (if using a reverse proxy, strongly consider `127.0.0.1:7860`)
+- `-p 7861:7861`: API server port (if using a reverse proxy, strongly consider `127.0.0.1:7861`)
 - `-v /path/to/auth:/app/configs/auth`: Mount directory containing auth files
 - `-e API_KEYS`: Comma-separated list of API keys for authentication
 - `-e TZ=America/New_York`: Timezone for logs (optional, defaults to system timezone)
@@ -100,8 +100,8 @@ services:
     image: ghcr.io/ibuhub/aistudio-to-api:latest
     container_name: aistudio-to-api
     ports:
-      # API server port (if using a reverse proxy, strongly consider `127.0.0.1:7860`)
-      - 7860:7860
+      # API server port (if using a reverse proxy, strongly consider `127.0.0.1:7861`)
+      - 7861:7861
     restart: unless-stopped
     volumes:
       # Mount directory containing auth files
@@ -128,7 +128,7 @@ If you prefer to build the Docker image yourself, you can use the following comm
    ```bash
    docker run -d \
      --name aistudio-to-api \
-     -p 7860:7860 \
+     -p 7861:7861 \
      -v /path/to/auth:/app/configs/auth \
      -e API_KEYS=your-api-key-1,your-api-key-2 \
      -e TZ=America/New_York \
@@ -142,7 +142,7 @@ After deployment, you need to add Google accounts using one of these methods:
 
 **Method 1: VNC-Based Login (Recommended)**
 
-- Access the deployed service address in your browser (e.g., `http://your-server:7860`) and click the "Add User" button
+- Access the deployed service address in your browser (e.g., `http://your-server:7861`) and click the "Add User" button
 - You'll be redirected to a VNC page with a browser instance
 - Log in to your Google account, then click the "Save" button after login is complete
 - The account will be automatically saved as `auth-N.json` (N starts from 0)
@@ -215,7 +215,7 @@ This endpoint forwards requests to the official Gemini API format endpoint.
 | `API_KEYS`                  | Comma-separated list of valid API keys for authentication.                                                                                                                  | `123456`             |
 | `WEB_CONSOLE_USERNAME`      | Username for web console login (optional). If both username and password are set, both are required to login.                                                               | None                 |
 | `WEB_CONSOLE_PASSWORD`      | Password for web console login (optional). If only password is set, login requires password only. If neither is set, the system falls back to `API_KEYS` for console login. | None                 |
-| `PORT`                      | API server port.                                                                                                                                                            | `7860`               |
+| `PORT`                      | API server port.                                                                                                                                                            | `7861`               |
 | `HOST`                      | Server listening host address.                                                                                                                                              | `0.0.0.0`            |
 | `ICON_URL`                  | Custom favicon URL for the console. Supports ICO, PNG, SVG, etc.                                                                                                            | `/AIStudio_logo.svg` |
 | `SECURE_COOKIES`            | Enable secure cookies. `true` for HTTPS only, `false` for both HTTP and HTTPS.                                                                                              | `false`              |

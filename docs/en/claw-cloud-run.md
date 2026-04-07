@@ -18,7 +18,7 @@ This guide will help you deploy the `aistudio-to-api` service on [Claw Cloud Run
    > 💡 **Tip**: If you need to log in via VNC, **1G Memory** might not be sufficient for the browser. It is recommended to temporarily adjust the configuration to **0.2 CPU / 2G Memory** for the VNC login process, and then revert to **0.5 CPU / 1G Memory** after logging in.
 
    **Network**:
-   - **Container Port**: `7860`
+   - **Container Port**: `7861`
    - **Public Access**: Toggle **On** (Leave the URL usage as is).
 
    **Local Storage**:

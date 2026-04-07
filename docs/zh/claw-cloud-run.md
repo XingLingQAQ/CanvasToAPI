@@ -18,7 +18,7 @@
    > 💡 **提示**：如果需要通过 VNC 登录账号，**1G 内存**可能不足以支撑浏览器运行。建议先将配置调整为 **0.2 CPU / 2G Memory** 进行 VNC 登录操作，登录完成后再改回 **0.5 CPU / 1G Memory**。
 
    **Network**:
-   - **Container Port**：`7860`
+   - **Container Port**：`7861`
    - **Public Access**：开启（Toggle **On**，后面的网址选项不用动）。
 
    **Local Storage**:

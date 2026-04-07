@@ -23,7 +23,7 @@ server {
 
     location / {
         # 反向代理到 Docker 容器
-        proxy_pass http://127.0.0.1:7860;
+        proxy_pass http://127.0.0.1:7861;
 
         # X-Real-IP: 传递真实客户端 IP
         proxy_set_header X-Real-IP $remote_addr;
@@ -73,7 +73,7 @@ sudo systemctl restart nginx
 ```nginx
 # 内层 Nginx（内网网关）配置示例
 location / {
-    proxy_pass http://127.0.0.1:7860;
+    proxy_pass http://127.0.0.1:7861;
 
     # 关键：透传上游的 X-Real-IP，不要用 $remote_addr 覆盖
     proxy_set_header X-Real-IP $http_x_real_ip;

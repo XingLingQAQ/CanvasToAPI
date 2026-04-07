@@ -5,7 +5,7 @@
 ## 🤖 OpenAI 兼容 API
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -23,7 +23,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 ### 🌊 使用流式响应
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -41,7 +41,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 ### 🖼️ 生成图片 [官方文档](https://ai.google.dev/gemini-api/docs/image-generation?hl=zh-cn)
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -59,7 +59,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 #### 🫗 流式生成
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -77,7 +77,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 ### 💬 Responses API
 
 ```bash
-curl -X POST http://localhost:7860/v1/responses \
+curl -X POST http://localhost:7861/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -90,7 +90,7 @@ curl -X POST http://localhost:7860/v1/responses \
 #### 🌊 流式 Responses API
 
 ```bash
-curl -X POST http://localhost:7860/v1/responses \
+curl -X POST http://localhost:7861/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -113,7 +113,7 @@ curl -X POST http://localhost:7860/v1/responses \
 ## ♊ Gemini 原生 API 格式
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -133,7 +133,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:generateConten
 ### 🌊 使用流式响应
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -153,7 +153,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:streamGenerate
 ### 🖼️ 生成图片 [官方文档](https://ai.google.dev/gemini-api/docs/image-generation?hl=zh-cn)
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-image-preview:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -173,7 +173,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:
 #### 🫗 流式生成
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-image-preview:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -199,7 +199,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:
 #### 基础 TTS（默认声音）
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -224,7 +224,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 可选声音：`Kore`、`Puck`、`Charon`、`Fenrir`、`Aoede`
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -256,7 +256,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 对话内容写在 prompt 中，使用 `multiSpeakerVoiceConfig` 配置多个说话者的声音（最多 2 个）。
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -305,7 +305,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 ## 👤 Anthropic 兼容 API
 
 ```bash
-curl -X POST http://localhost:7860/v1/messages \
+curl -X POST http://localhost:7861/v1/messages \
   -H "Content-Type: application/json" \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \
@@ -325,7 +325,7 @@ curl -X POST http://localhost:7860/v1/messages \
 ### 🌊 使用流式响应
 
 ```bash
-curl -X POST http://localhost:7860/v1/messages \
+curl -X POST http://localhost:7861/v1/messages \
   -H "Content-Type: application/json" \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \

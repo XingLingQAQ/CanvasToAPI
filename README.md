@@ -47,9 +47,9 @@
    npm start
    ```
 
-   API 服务将在 `http://localhost:7860` 上运行。
+   API 服务将在 `http://localhost:7861` 上运行。
 
-   服务启动后，您可以在浏览器中访问 `http://localhost:7860` 打开 Web 控制台主页，在这里可以查看账号状态和服务状态。
+   服务启动后，您可以在浏览器中访问 `http://localhost:7861` 打开 Web 控制台主页，在这里可以查看账号状态和服务状态。
 
 5. 更新到最新版本（已有本地部署时）：
 
@@ -71,7 +71,7 @@
 ```bash
 docker run -d \
   --name aistudio-to-api \
-  -p 7860:7860 \
+  -p 7861:7861 \
   -v /path/to/auth:/app/configs/auth \
   -e API_KEYS=your-api-key-1,your-api-key-2 \
   -e TZ=Asia/Shanghai \
@@ -83,7 +83,7 @@ docker run -d \
 
 参数说明：
 
-- `-p 7860:7860`：API 服务器端口（如果使用反向代理，强烈建议改成 127.0.0.1:7860）
+- `-p 7861:7861`：API 服务器端口（如果使用反向代理，强烈建议改成 127.0.0.1:7861）
 - `-v /path/to/auth:/app/configs/auth`：挂载包含认证文件的目录
 - `-e API_KEYS`：用于身份验证的 API 密钥列表（使用逗号分隔）
 - `-e TZ=Asia/Shanghai`：时区设置（可选，默认使用系统时区）
@@ -100,8 +100,8 @@ services:
     image: ghcr.io/ibuhub/aistudio-to-api:latest
     container_name: aistudio-to-api
     ports:
-      # API 服务器端口（如果使用反向代理，强烈建议改成 127.0.0.1:7860）
-      - 7860:7860
+      # API 服务器端口（如果使用反向代理，强烈建议改成 127.0.0.1:7861）
+      - 7861:7861
     restart: unless-stopped
     volumes:
       # 挂载包含认证文件的目录
@@ -130,7 +130,7 @@ services:
    ```bash
    docker run -d \
      --name aistudio-to-api \
-     -p 7860:7860 \
+     -p 7861:7861 \
      -v /path/to/auth:/app/configs/auth \
      -e API_KEYS=your-api-key-1,your-api-key-2 \
      -e TZ=Asia/Shanghai \
@@ -144,7 +144,7 @@ services:
 
 **方法 1：VNC 登录（推荐）**
 
-- 在浏览器中访问部署的服务地址（例如 `http://your-server:7860`）并点击「添加账号」按钮
+- 在浏览器中访问部署的服务地址（例如 `http://your-server:7861`）并点击「添加账号」按钮
 - 将跳转到 VNC 页面，显示浏览器实例
 - 登录您的 Google 账号，登录完成后点击「保存」按钮
 - 账号将自动保存为 `auth-N.json`（N 从 0 开始）
@@ -217,7 +217,7 @@ services:
 | `API_KEYS`                  | 用于身份验证的有效 API 密钥列表（使用逗号分隔）。                                                                              | `123456`             |
 | `WEB_CONSOLE_USERNAME`      | 网页控制台登录的用户名（可选）。如果同时设置用户名和密码，登录时需要输入两者。                                                 | 无                   |
 | `WEB_CONSOLE_PASSWORD`      | 网页控制台登录的密码（可选）。如果只设置密码，登录页面仅要求输入密码；如果两者都不设置，系统将使用 `API_KEYS` 进行控制台登录。 | 无                   |
-| `PORT`                      | API 服务器端口。                                                                                                               | `7860`               |
+| `PORT`                      | API 服务器端口。                                                                                                               | `7861`               |
 | `HOST`                      | 服务器监听的主机地址。                                                                                                         | `0.0.0.0`            |
 | `ICON_URL`                  | 用于自定义控制台的 favicon 图标。支持 ICO, PNG, SVG 等格式。                                                                   | `/AIStudio_logo.svg` |
 | `SECURE_COOKIES`            | 是否启用安全 Cookie。`true` 表示仅支持 HTTPS 协议访问控制台。                                                                  | `false`              |

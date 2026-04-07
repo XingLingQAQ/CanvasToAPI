@@ -5,7 +5,7 @@ This document provides simple API usage examples, including OpenAI-compatible AP
 ## 🤖 OpenAI-Compatible API
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -23,7 +23,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 ### 🌊 Streaming Response
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -41,7 +41,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 ### 🖼️ Generate Image [Official Docs](https://ai.google.dev/gemini-api/docs/image-generation)
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -59,7 +59,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 #### 🫗 Stream Generation
 
 ```bash
-curl -X POST http://localhost:7860/v1/chat/completions \
+curl -X POST http://localhost:7861/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -77,7 +77,7 @@ curl -X POST http://localhost:7860/v1/chat/completions \
 ### 💬 Responses API
 
 ```bash
-curl -X POST http://localhost:7860/v1/responses \
+curl -X POST http://localhost:7861/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -90,7 +90,7 @@ curl -X POST http://localhost:7860/v1/responses \
 #### 🌊 Streaming Responses API
 
 ```bash
-curl -X POST http://localhost:7860/v1/responses \
+curl -X POST http://localhost:7861/v1/responses \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -113,7 +113,7 @@ curl -X POST http://localhost:7860/v1/responses \
 ## ♊ Gemini Native API Format
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -133,7 +133,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:generateConten
 ### 🌊 Streaming Content Generation
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -153,7 +153,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash:streamGenerate
 ### 🖼️ Generate Image [Official Docs](https://ai.google.dev/gemini-api/docs/image-generation)
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-image-preview:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -173,7 +173,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:
 #### 🫗 Stream Generation
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:streamGenerateContent?alt=sse \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-image-preview:streamGenerateContent?alt=sse \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -195,7 +195,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-image-preview:
 #### Basic TTS (Default Voice)
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -220,7 +220,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 Available voices: `Kore`, `Puck`, `Charon`, `Fenrir`, `Aoede`
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -252,7 +252,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 Write the dialogue in the prompt and configure multiple speaker voices using `multiSpeakerVoiceConfig` (up to 2 speakers).
 
 ```bash
-curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
+curl -X POST http://localhost:7861/v1beta/models/gemini-2.5-flash-preview-tts:generateContent \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-api-key-1" \
   -d '{
@@ -299,7 +299,7 @@ curl -X POST http://localhost:7860/v1beta/models/gemini-2.5-flash-preview-tts:ge
 ## 👤 Anthropic Compatible API
 
 ```bash
-curl -X POST http://localhost:7860/v1/messages \
+curl -X POST http://localhost:7861/v1/messages \
   -H "Content-Type: application/json" \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \
@@ -319,7 +319,7 @@ curl -X POST http://localhost:7860/v1/messages \
 ### 🌊 Streaming Response
 
 ```bash
-curl -X POST http://localhost:7860/v1/messages \
+curl -X POST http://localhost:7861/v1/messages \
   -H "Content-Type: application/json" \
   -H "x-api-key: your-api-key-1" \
   -H "anthropic-version: 2023-06-01" \

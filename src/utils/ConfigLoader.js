@@ -29,7 +29,7 @@ class ConfigLoader {
             forceUrlContext: false,
             forceWebSearch: false,
             host: "0.0.0.0",
-            httpPort: 7860,
+            httpPort: 7861,
             immediateSwitchStatusCodes: [429, 503],
             maxContexts: 1,
             maxRetries: 3,

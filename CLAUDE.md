@@ -134,7 +134,7 @@ The system maintains multiple browser contexts simultaneously:
 
 Key variables (see `.env.example` for full list):
 
-- `PORT`: API server port (default: 7860)
+- `PORT`: API server port (default: 7861)
 - `WS_PORT`: WebSocket port for browser communication (default: 9998)
 - `API_KEYS`: Comma-separated API keys for client authentication
 - `INITIAL_AUTH_INDEX`: Starting account index (default: 0)

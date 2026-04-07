@@ -23,7 +23,7 @@ server {
 
     location / {
         # Reverse proxy to Docker container
-        proxy_pass http://127.0.0.1:7860;
+        proxy_pass http://127.0.0.1:7861;
 
         # Critical: Pass real client IP
         # X-Real-IP: Highest priority, contains the real client IP
@@ -74,7 +74,7 @@ sudo systemctl restart nginx
 ```nginx
 # Inner Nginx (internal gateway) configuration example
 location / {
-    proxy_pass http://127.0.0.1:7860;
+    proxy_pass http://127.0.0.1:7861;
 
     # Critical: Pass through upstream X-Real-IP, do NOT override with $remote_addr
     proxy_set_header X-Real-IP $http_x_real_ip;
