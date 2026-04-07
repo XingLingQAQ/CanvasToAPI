@@ -169,8 +169,7 @@ const getNextAuthIndex = () => {
         );
     }
 
-    // <<< This is the only modification point: updated to Google AI Studio address >>>
-    await page.goto("https://aistudio.google.com/u/0/prompts/new_chat");
+    await page.goto("https://gemini.google.com");
 
     if (autoFillEmail) {
         try {
@@ -225,8 +224,6 @@ const getNextAuthIndex = () => {
                             await notNowButton.click();
                             await randomWait();
                         }
-                        const title = await page.title();
-                        if (title.includes("AI Studio")) break;
                         await page.waitForTimeout(1000);
                     }
                 } catch (e) {
@@ -250,53 +247,21 @@ const getNextAuthIndex = () => {
     }
 
     console.log("");
-    console.log(
-        getText(
-            "🕵️ 正在监测登录状态 (监测 AI Studio 标题)...",
-            "🕵️ Monitoring login status (watching for AI Studio title)..."
-        )
-    );
-
-    // Monitoring loop for AI Studio title
-    let loginDetected = false;
-    const checkInterval = 1000;
-    const maxWaitTime = 300000; // 5 minutes
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < maxWaitTime) {
-        try {
-            const title = await page.title();
-            if (title.includes("AI Studio")) {
-                console.log(
-                    getText("✨ 检测到 AI Studio 标题，登录成功！", "✨ AI Studio title detected, login successful!")
-                );
-                await page.waitForTimeout(2000); // Wait 2s for state to stabilize
-                loginDetected = true;
-                break;
-            }
-        } catch (e) {
-            // Page might be navigating
-        }
-        await page.waitForTimeout(checkInterval);
-    }
-
-    if (!loginDetected) {
-        if (autoFillEmail) {
-            console.log(
-                getText(
-                    "⚠️ 未能自动检测到登录成功状态。请在浏览器中手动完成登录。",
-                    "⚠️ Could not automatically detect login success. Please complete login manually in the browser."
-                )
-            );
-        }
+    if (autoFillEmail) {
         console.log(
             getText(
-                '▶️  返回此终端，然后按 "回车键" 继续...',
-                '▶️  Return to this terminal, then press "Enter" to continue...'
+                "Please confirm login is complete in the browser before continuing.",
+                "Please confirm login is complete in the browser before continuing."
             )
         );
-        await new Promise(resolve => process.stdin.once("data", resolve));
     }
+    console.log(
+        getText(
+            'Return to this terminal, then press "Enter" to continue...',
+            'Return to this terminal, then press "Enter" to continue...'
+        )
+    );
+    await new Promise(resolve => process.stdin.once("data", resolve));
 
     // ==================== Capture Account Name ====================
 

@@ -67,7 +67,8 @@ class BrowserManager {
         this._wsInitState = new Map();
 
         // Target URL for AI Studio app
-        this.targetUrl = "https://ai.studio/apps/c48c6178-8dad-4d16-8de7-bb78d265482c";
+        this.targetUrl = "https://gemini.google.com/share/1ceb8146526d";
+        // this.targetUrl = "https://gemini.google.com";
 
         // Firefox/Camoufox does not use Chromium-style command line args.
         // We keep this empty; Camoufox has its own anti-fingerprinting optimizations built-in.
@@ -139,6 +140,43 @@ class BrowserManager {
 
     set currentAuthIndex(value) {
         this._currentAuthIndex = value;
+    }
+
+    async _checkForSignInButtonAuthExpired(page, logPrefix = "[Browser]", authIndex = -1) {
+        const signInSelectors = [
+            'button:text("Sign in")',
+            'button:has-text("Sign in")',
+            'a:text("Sign in")',
+            'a:has-text("Sign in")',
+            '[role="button"]:has-text("Sign in")',
+        ];
+
+        for (const selector of signInSelectors) {
+            try {
+                const element = page.locator(selector).first();
+                if (await element.isVisible({ timeout: 500 })) {
+                    this.logger.warn(`${logPrefix} Detected visible "Sign in" UI entry, treating auth as expired`);
+                    if (authIndex >= 0 && this.authSource) {
+                        await this.authSource.markAsExpired(authIndex);
+                    }
+                    throw new AuthExpiredError();
+                }
+            } catch (error) {
+                if (isAuthExpiredError(error)) {
+                    throw error;
+                }
+
+                if (
+                    error &&
+                    error.message &&
+                    (error.message.includes("Target page, context or browser has been closed") ||
+                        error.message.includes("Execution context was destroyed") ||
+                        error.message.includes("Navigation failed because page was closed"))
+                ) {
+                    throw error;
+                }
+            }
+        }
     }
 
     /**
@@ -214,6 +252,7 @@ class BrowserManager {
 
                 // Check if initialization succeeded
                 if (state && state.success) {
+                    await this._checkForSignInButtonAuthExpired(page, logPrefix, authIndex);
                     return true;
                 }
 
@@ -248,8 +287,8 @@ class BrowserManager {
             this.logger.error(`${logPrefix} ⏱️ WebSocket initialization timeout after ${timeout / 1000}s`);
             return false;
         } catch (error) {
-            // If it's an abort error, re-throw it so the caller can handle it properly
-            if (isContextAbortedError(error)) {
+            // If it's an abort/auth-expired error, re-throw it so the caller can handle it properly
+            if (isContextAbortedError(error) || isAuthExpiredError(error)) {
                 throw error;
             }
             // For other errors, log and return false
@@ -871,39 +910,60 @@ class BrowserManager {
      */
     async _tryClickLaunchButton(page, logPrefix = "[Browser]") {
         try {
-            this.logger.debug(`${logPrefix} 🔍 Checking for Launch button...`);
+            this.logger.debug(`${logPrefix} ?? Checking for Launch/Continue button...`);
 
-            // Try to find Launch button with multiple selectors
-            const launchSelectors = [
-                'button:text("Launch")',
-                'button:has-text("Launch")',
-                'button[aria-label*="Launch"]',
-                'button span:has-text("Launch")',
-                'div[role="button"]:has-text("Launch")',
+            const entryButtons = [
+                {
+                    label: "Launch",
+                    selectors: [
+                        'button:text("Launch")',
+                        'button:has-text("Launch")',
+                        'button[aria-label*="Launch"]',
+                        'button span:has-text("Launch")',
+                        'div[role="button"]:has-text("Launch")',
+                    ],
+                },
+                {
+                    label: "Continue",
+                    selectors: [
+                        'button:text("Continue")',
+                        'button:has-text("Continue")',
+                        'button[aria-label*="Continue"]',
+                        'button span:has-text("Continue")',
+                        'div[role="button"]:has-text("Continue")',
+                    ],
+                },
             ];
 
             let clicked = false;
-            for (const selector of launchSelectors) {
-                try {
-                    const element = page.locator(selector).first();
-                    if (await element.isVisible({ timeout: 2000 })) {
-                        this.logger.debug(`${logPrefix} Found Launch button with selector: ${selector}`);
-                        await element.click({ force: true, timeout: 5000 });
-                        this.logger.info(`${logPrefix} Launch button clicked successfully`);
-                        clicked = true;
-                        await page.waitForTimeout(1000);
-                        break;
+            for (const entryButton of entryButtons) {
+                for (const selector of entryButton.selectors) {
+                    try {
+                        const element = page.locator(selector).first();
+                        if (await element.isVisible({ timeout: 2000 })) {
+                            this.logger.debug(
+                                `${logPrefix} Found ${entryButton.label} button with selector: ${selector}`
+                            );
+                            await element.click({ force: true, timeout: 5000 });
+                            this.logger.info(`${logPrefix} ${entryButton.label} button clicked successfully`);
+                            clicked = true;
+                            await page.waitForTimeout(1000);
+                            break;
+                        }
+                    } catch (e) {
+                        // Continue to next selector
                     }
-                } catch (e) {
-                    // Continue to next selector
                 }
+                if (clicked) break;
             }
 
             if (!clicked) {
-                this.logger.info(`${logPrefix} No Launch button found`);
+                this.logger.info(`${logPrefix} No Launch/Continue button found`);
             }
+            return clicked;
         } catch (error) {
-            this.logger.warn(`${logPrefix} ⚠️ Error while checking for Launch button: ${error.message}`);
+            this.logger.warn(`${logPrefix} ??? Error while checking for Launch/Continue button: ${error.message}`);
+            return false;
         }
     }
 
@@ -1468,7 +1528,7 @@ class BrowserManager {
             args: this.launchArgs,
             executablePath: this.browserExecutablePath,
             firefoxUserPrefs: this.firefoxUserPrefs,
-            headless: true,
+            headless: false,
             ...(proxyConfig ? { proxy: proxyConfig } : {}),
         });
         this.browser.on("disconnected", () => {
@@ -2017,14 +2077,18 @@ class BrowserManager {
                 throw new ContextAbortedError(authIndex, "marked for deletion");
             }
 
-            // Try to click Launch button if it exists (not a popup, but a page button)
-            await this._tryClickLaunchButton(page, `[Context#${authIndex}]`);
+            // Try to click Launch/Continue button if it exists (not a popup, but a page button)
+            const entryButtonClicked = await this._tryClickLaunchButton(page, `[Context#${authIndex}]`);
+            if (entryButtonClicked) {
+                await this._checkForSignInButtonAuthExpired(page, `[Context#${authIndex}]`, authIndex);
+            }
 
             // Wait for WebSocket initialization (no retry)
             // Check if initialization already succeeded (console listener may have detected it)
             const wsState = this._wsInitState.get(authIndex);
             if (wsState && wsState.success) {
                 this.logger.info(`[Context#${authIndex}] ✅ WebSocket already initialized, skipping wait`);
+                await this._checkForSignInButtonAuthExpired(page, `[Context#${authIndex}]`, authIndex);
             } else {
                 // Wait for WebSocket initialization (60 second timeout)
                 // This will throw an abort error if the context is aborted during wait
@@ -2369,14 +2433,18 @@ class BrowserManager {
             // Handle various popups (Cookie consent, Got it, Onboarding, etc.)
             await this._handlePopups(page, "[Reconnect]");
 
-            // Try to click Launch button if it exists (not a popup, but a page button)
-            await this._tryClickLaunchButton(page, "[Reconnect]");
+            // Try to click Launch/Continue button if it exists (not a popup, but a page button)
+            const reconnectEntryButtonClicked = await this._tryClickLaunchButton(page, "[Reconnect]");
+            if (reconnectEntryButtonClicked) {
+                await this._checkForSignInButtonAuthExpired(page, "[Reconnect]", targetAuthIndex);
+            }
 
             // Wait for WebSocket initialization (no retry)
             // Check if initialization already succeeded (console listener may have detected it)
             const wsState = this._wsInitState.get(targetAuthIndex);
             if (wsState && wsState.success) {
                 this.logger.info(`[Reconnect] ✅ WebSocket already initialized, skipping wait`);
+                await this._checkForSignInButtonAuthExpired(page, "[Reconnect]", targetAuthIndex);
             } else {
                 // Wait for WebSocket initialization (60 second timeout)
                 const initSuccess = await this._waitForWebSocketInit(
