@@ -2,95 +2,101 @@
 
 中文文档 | [English](README_EN.md)
 
-一个将 Gemini Canvas 网页端封装为兼容 OpenAI API、Gemini API 和 Anthropic API 的工具。该服务将充当代理，将 API 请求转换为与 Canvas 网页界面的浏览器交互。
+一个将 Gemini 网页会话封装为兼容 OpenAI API、Gemini API 和 Anthropic API 的工具。服务端负责提供 API 接口和请求调度，实际浏览器会话需要由用户手动打开指定 Gemini 分享页，与服务端建立连接后才能处理请求。
 
 ## ✨ 功能特性
 
 - 🔄 **API 兼容性**：同时兼容 OpenAI API、Gemini API 和 Anthropic API 格式
-- 🌐 **网页自动化**：使用浏览器自动化技术与 Canvas 网页界面交互
-- 👥 **多账号支持**：支持多个 Google 账号同时登录，快速切换无需重新登录
+- 🌐 **浏览器会话中转**：通过 Gemini 网页会话承接请求，不再依赖本地 `auth` 文件
+- 🔁 **多会话调度**：支持多个浏览器会话同时连接，按轮询或随机策略分配请求
 - 🔧 **支持工具调用**：OpenAI、Gemini 和 Anthropic 接口均支持 Tool Calls (Function Calling)
-- 📝 **模型支持**：通过 Canvas 访问各种 Gemini 模型，包括生图模型和 TTS 语音合成模型
-- 🎨 **主页展示控制**：提供可视化的 Web 控制台，支持账号管理、VNC 登录等操作
+- 📊 **可视化控制台**：提供状态页、日志页和在线配置开关，方便观察服务运行状态
 
 ## 🚀 快速开始
 
 ### 💻 直接运行（Windows / macOS / Linux）
 
-1. 克隆仓库：
+1. 克隆仓库并安装依赖：
 
    ```bash
    git clone https://github.com/iBUHub/CanvasToAPI.git
    cd CanvasToAPI
+   npm install
    ```
 
-2. 运行快速设置脚本：
+2. 配置环境变量：
 
    ```bash
-   npm run setup-auth
+   cp .env.example .env
    ```
 
-   该脚本将：
-   - 自动下载 Camoufox 浏览器（一个注重隐私的 Firefox 分支）
-   - 启动浏览器并自动导航到 Canvas
-   - 在本地保存您的身份验证凭据（auth 文件位于 `/configs/auth`）
+   至少建议设置：
 
-   > 💡 **提示：** 如果下载 Camoufox 浏览器失败或等待太久，可以自行点击 [此处](https://github.com/daijro/camoufox/releases/tag/v135.0.1-beta.24) 下载，然后设置环境变量 `CAMOUFOX_EXECUTABLE_PATH` 为可执行文件的路径（支持绝对和相对路径）。
+   ```env
+   API_KEYS=your-api-key
+   ```
 
-3. 配置环境变量（可选）：
-
-   复制根目录下的 `.env.example` 为 `.env`，并在 `.env` 中按需修改配置（如端口、API 密钥等）。
-
-4. 启动服务：
+3. 启动服务：
 
    ```bash
    npm start
    ```
 
-   API 服务将在 `http://localhost:7861` 上运行。
+4. 打开控制台：
 
-   服务启动后，您可以在浏览器中访问 `http://localhost:7861` 打开 Web 控制台主页，在这里可以查看账号状态和服务状态。
+   访问 `http://localhost:7861`，使用 `API_KEYS`（或你配置的控制台账号密码）登录。
 
-5. 更新到最新版本（已有本地部署时）：
+5. 手动建立浏览器会话：
 
-   ```bash
-   git pull
-   npm install
-   ```
+   在需要承载 Gemini 会话的浏览器中打开：
 
-> ⚠ **注意：** 直接运行不支持通过 VNC 在线添加账号，需要使用 `npm run setup-auth` 脚本添加账号。当前 VNC 登录功能仅在 Docker 容器中可用。
+   [https://gemini.google.com/share/b94de199e6f5](https://gemini.google.com/share/b94de199e6f5)
+
+   该页面的实际内容可参考仓库中的 [scripts/client/canvas.html](scripts/client/canvas.html)。
+
+   打开后请手动填写：
+   - `Server WS Endpoint`：例如本地部署填写 `ws://127.0.0.1:9997`，远程部署填写你的服务端 WebSocket 地址
+   - `Browser Identifier`：浏览器标志，可自定义；留空时页面会自动生成每日标志
+
+   填写完成后点击 `Connect`。连接成功后，回到状态页确认 `Browser Sessions` 中已有在线会话。
+
+6. 开始调用 API：
+
+   至少有一个浏览器会话在线时，服务端才会真正转发并处理请求。
+
+> ⚠ **注意：**
+> 旧版 README 中的 `npm run setup-auth`、`auth-N.json`、VNC 登录和上传 Auth 文件等流程，已不适用于当前版本。
+
+> 💡 **提示：**
+> 如果服务部署在远程机器上，建立会话的浏览器必须能够访问服务端的 HTTP 端口 `PORT` 以及 WebSocket 端口 `WS_PORT`。默认情况下，除了 `7861` 之外，还需要额外开放 `9997`。
 
 ### 🐋 Docker 部署
 
-使用 Docker 部署，无需预先提取身份验证凭据。
-
-#### 🚢 步骤 1：部署容器
-
-##### 🎮️ 方式 1：Docker 命令
+#### 🎮️ 方式 1：Docker 命令
 
 ```bash
 docker run -d \
   --name canvas-to-api \
   -p 7861:7861 \
-  -v /path/to/auth:/app/configs/auth \
-  -e API_KEYS=your-api-key-1,your-api-key-2 \
+  -p 9997:9997 \
+  -e API_KEYS=your-api-key \
   -e TZ=Asia/Shanghai \
   --restart unless-stopped \
   ghcr.io/ibuhub/canvas-to-api:latest
 ```
 
-> 💡 **提示：** 如果 `ghcr.io` 访问速度较慢或不可用，可以使用 Docker Hub 镜像：`ibuhub/canvas-to-api:latest`。
+> 💡 **提示：** 如果 `ghcr.io` 访问较慢，可以使用 Docker Hub 镜像：`ibuhub/canvas-to-api:latest`。
 
 参数说明：
 
-- `-p 7861:7861`：API 服务器端口（如果使用反向代理，强烈建议改成 127.0.0.1:7861）
-- `-v /path/to/auth:/app/configs/auth`：挂载包含认证文件的目录
-- `-e API_KEYS`：用于身份验证的 API 密钥列表（使用逗号分隔）
-- `-e TZ=Asia/Shanghai`：时区设置（可选，默认使用系统时区）
+- `-p 7861:7861`：HTTP API 与控制台端口
+- `-p 9997:9997`：浏览器会话连接使用的 WebSocket 端口，这个端口也必须对建立会话的浏览器可达
+- `-e API_KEYS`：客户端访问 API 和控制台时使用的密钥
+- `-e TZ=Asia/Shanghai`：日志和页面显示时间的时区（可选）
 
-##### 📦 方式 2：Docker Compose
+#### 📦 方式 2：Docker Compose
 
-创建 `docker-compose.yml` 文件：
+创建 `docker-compose.yml`：
 
 ```yaml
 name: canvas-to-api
@@ -100,109 +106,42 @@ services:
     image: ghcr.io/ibuhub/canvas-to-api:latest
     container_name: canvas-to-api
     ports:
-      # API 服务器端口（如果使用反向代理，强烈建议改成 127.0.0.1:7861）
       - 7861:7861
+      - 9997:9997
     restart: unless-stopped
-    volumes:
-      # 挂载包含认证文件的目录
-      - ./auth:/app/configs/auth
     environment:
-      # 用于身份验证的 API 密钥列表（使用逗号分隔）
-      API_KEYS: your-api-key-1,your-api-key-2
-      # 时区设置（可选，默认使用系统时区）
+      API_KEYS: your-api-key
       TZ: Asia/Shanghai
 ```
 
-> 💡 **提示：** 如果 `ghcr.io` 访问速度较慢或不可用，可以将 `image` 改为 `ibuhub/canvas-to-api:latest`。
+#### 🔌 步骤 2：连接浏览器会话
 
-##### 🛠️ 方式 3：从源码构建
+容器启动后，仍然需要手动打开以下页面建立浏览器会话：
 
-如果您希望自己构建 Docker 镜像，可以使用以下命令：
+[https://gemini.google.com/share/b94de199e6f5](https://gemini.google.com/share/b94de199e6f5)
 
-1. 构建镜像：
+页面中需要手动填写浏览器标志（`Browser Identifier`）和服务端 WebSocket 地址（`Server WS Endpoint`，例如 `ws://your-host:9997` 或 `wss://your-host:9997`）。连接建立成功后，状态页会显示在线浏览器会话，之后 API 请求才会被转发。
 
-   ```bash
-   docker build -t canvas-to-api .
-   ```
-
-2. 运行容器：
-
-   ```bash
-   docker run -d \
-     --name canvas-to-api \
-     -p 7861:7861 \
-     -v /path/to/auth:/app/configs/auth \
-     -e API_KEYS=your-api-key-1,your-api-key-2 \
-     -e TZ=Asia/Shanghai \
-     --restart unless-stopped \
-     canvas-to-api
-   ```
-
-#### 🔑 步骤 2：账号管理
-
-部署后，您需要使用以下方式之一添加 Google 账号：
-
-**方法 1：VNC 登录（推荐）**
-
-- 在浏览器中访问部署的服务地址（例如 `http://your-server:7861`）并点击「添加账号」按钮
-- 将跳转到 VNC 页面，显示浏览器实例
-- 登录您的 Google 账号，登录完成后点击「保存」按钮
-- 账号将自动保存为 `auth-N.json`（N 从 0 开始）
-
-**方法 2：上传认证文件**
-
-- 在本地机器上运行 `npm run setup-auth` 生成认证文件（参考 [直接运行](#-直接运行windows--macos--linux) 的 1 和 2），认证文件在 `/configs/auth`
-- 在网页控制台，点击「上传 Auth」，上传 auth 的 JSON 文件，或手动上传到挂载的 `/path/to/auth` 目录
-
-> 💡 **提示**：您也可以从已有的容器下载 auth 文件，然后上传到新的容器。在网页控制台点击对应账号的「下载 Auth」按钮即可下载 auth 文件。
-
-> ⚠ 目前暂不支持通过环境变量注入认证信息。
-
-#### 🌐 步骤 3（可选）：使用 Nginx 反向代理
-
-如果需要通过域名访问或希望在反向代理层统一管理（例如配置 HTTPS、负载均衡等），可以使用 Nginx。
-
-> 📖 详细的 Nginx 配置说明请参阅：[Nginx 反向代理配置文档](docs/zh/nginx-setup.md)
-
-### 🐾 Claw Cloud Run 部署
-
-支持直接部署到 Claw Cloud Run，全托管的容器平台。
-
-> 📖 详细部署说明请参阅：[部署到 Claw Cloud Run](docs/zh/claw-cloud-run.md)
-
-### 🦓 Zeabur 部署
-
-> ℹ **Zeabur 公告：** 自 **2026/03/15** 起，Zeabur 已停止在 **共享集群** 上创建新项目；**已经运行在共享集群上的服务不会受到影响**。详情请参阅官方变更说明：
-> [公告](https://zeabur.com/zh-CN/changelogs/phasing-out-shared-cluster)
-
-> 📖 旧版部署教程请参阅：[部署到 Zeabur](docs/zh/zeabur.md)
-
-## 📡 使用 API
+## 📗 使用 API
 
 ### 🤖 OpenAI 兼容 API
 
-此端点处理后转发到官方 Gemini API 格式端点。
+- `GET /v1/models`：列出模型。
+- `POST /v1/chat/completions`：聊天补全和图片生成，支持非流式、真流式和假流式。
+- `POST /v1/responses`：OpenAI Responses API 兼容接口，用于对话生成，不支持图像生成，支持非流式、真流式和假流式。
+- `POST /v1/responses/input_tokens`：计算 OpenAI Responses API 请求的输入 token 数量。
 
-- `GET /v1/models`: 列出模型。
-- `POST /v1/chat/completions`: 聊天补全和图片生成，支持非流式、真流式和假流式。
-- `POST /v1/responses`: OpenAI Responses API 兼容接口，用于对话生成，不支持图像生成，支持非流式、真流式和假流式。
-- `POST /v1/responses/input_tokens`: 计算 OpenAI Responses API 请求的输入 token 数量。
+### ❤️ Gemini 原生 API 格式
 
-### ♊ Gemini 原生 API 格式
+- `GET /v1beta/models`：列出可用的 Gemini 模型。
+- `POST /v1beta/models/{model_name}:generateContent`：生成内容、图片和语音。
+- `POST /v1beta/models/{model_name}:streamGenerateContent`：流式生成内容、图片和语音，支持真流式和假流式。
 
-此端点转发到官方 Gemini API 格式端点。
+### 🧠 Anthropic 兼容 API
 
-- `GET /v1beta/models`: 列出可用的 Gemini 模型。
-- `POST /v1beta/models/{model_name}:generateContent`: 生成内容、图片和语音。
-- `POST /v1beta/models/{model_name}:streamGenerateContent`: 流式生成内容、图片和语音，支持真流式和假流式。
-
-### 👤 Anthropic 兼容 API
-
-此端点处理后转发到官方 Gemini API 格式端点。
-
-- `GET /v1/models`: 列出模型。
-- `POST /v1/messages`: 聊天消息补全，支持非流式、真流式和假流式。
-- `POST /v1/messages/count_tokens`: 计算消息中的 token 数量。
+- `GET /v1/models`：列出模型。
+- `POST /v1/messages`：聊天消息补全，支持非流式、真流式和假流式。
+- `POST /v1/messages/count_tokens`：计算消息中的 token 数量。
 
 > 📖 详细的 API 使用示例请参阅：[API 使用示例文档](docs/zh/api-examples.md)
 
@@ -212,64 +151,60 @@ services:
 
 #### 📱 应用配置
 
-| 变量名                      | 描述                                                                                                                           | 默认值               |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------- | :------------------- |
-| `API_KEYS`                  | 用于身份验证的有效 API 密钥列表（使用逗号分隔）。                                                                              | `123456`             |
-| `WEB_CONSOLE_USERNAME`      | 网页控制台登录的用户名（可选）。如果同时设置用户名和密码，登录时需要输入两者。                                                 | 无                   |
-| `WEB_CONSOLE_PASSWORD`      | 网页控制台登录的密码（可选）。如果只设置密码，登录页面仅要求输入密码；如果两者都不设置，系统将使用 `API_KEYS` 进行控制台登录。 | 无                   |
-| `PORT`                      | API 服务器端口。                                                                                                               | `7861`               |
-| `HOST`                      | 服务器监听的主机地址。                                                                                                         | `0.0.0.0`            |
-| `ICON_URL`                  | 用于自定义控制台的 favicon 图标。支持 ICO, PNG, SVG 等格式。                                                                   | `/AIStudio_logo.svg` |
-| `SECURE_COOKIES`            | 是否启用安全 Cookie。`true` 表示仅支持 HTTPS 协议访问控制台。                                                                  | `false`              |
-| `RATE_LIMIT_MAX_ATTEMPTS`   | 时间窗口内控制台允许的最大失败登录尝试次数（设为 `0` 禁用）。                                                                  | `5`                  |
-| `RATE_LIMIT_WINDOW_MINUTES` | 速率限制的时间窗口长度（分钟）。                                                                                               | `15`                 |
-| `CHECK_UPDATE`              | 是否在页面加载时检查版本更新（设为 `false` 禁用）。                                                                            | `true`               |
-| `LOG_LEVEL`                 | 日志输出等级。设为 `DEBUG` 启用详细调试日志。                                                                                  | `INFO`               |
-| `TZ`                        | 日志和显示时间使用的时区，例如 `Asia/Shanghai`。留空时默认使用系统时区。                                                       | 系统时区             |
+| 变量名                      | 描述                                                                                                             | 默认值               |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------------- | :------------------- |
+| `API_KEYS`                  | 用于 API 鉴权的密钥列表，多个值使用逗号分隔；同时也是默认的控制台登录密码来源。                                  | `123456`             |
+| `WEB_CONSOLE_USERNAME`      | 网页控制台登录用户名（可选）。如果与密码同时设置，则登录时需要输入两者。                                         | 无                   |
+| `WEB_CONSOLE_PASSWORD`      | 网页控制台登录密码（可选）。如果只设置密码，则控制台只要求输入密码；如果两者都不设置，则回退到 `API_KEYS` 登录。 | 无                   |
+| `PORT`                      | HTTP API 与控制台端口。                                                                                          | `7861`               |
+| `HOST`                      | HTTP 服务和 WebSocket 服务监听地址。                                                                             | `0.0.0.0`            |
+| `ICON_URL`                  | 控制台 favicon 地址，支持 ICO、PNG、SVG 等格式。                                                                 | `/AIStudio_logo.svg` |
+| `SECURE_COOKIES`            | 是否启用仅 HTTPS 可用的安全 Cookie。                                                                             | `false`              |
+| `RATE_LIMIT_MAX_ATTEMPTS`   | 控制台登录失败次数限制，设为 `0` 可关闭。                                                                        | `5`                  |
+| `RATE_LIMIT_WINDOW_MINUTES` | 控制台登录失败次数统计窗口，单位分钟。                                                                           | `15`                 |
+| `CHECK_UPDATE`              | 是否在控制台页面检查新版本。设为 `false` 可关闭。                                                                | `true`               |
+| `LOG_LEVEL`                 | 日志级别，支持 `INFO` 和 `DEBUG`。                                                                               | `INFO`               |
+| `TZ`                        | 日志和页面显示时间使用的时区，例如 `Asia/Shanghai`。留空时默认使用系统时区。                                     | 系统时区             |
 
-#### 🌐 代理配置
+#### 🌐 会话路由配置
 
-| 变量名                          | 描述                                                                                                                                                                | 默认值    |
-| :------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------- |
-| `INITIAL_AUTH_INDEX`            | 启动时使用的初始身份验证索引。                                                                                                                                      | `0`       |
-| `ENABLE_AUTH_UPDATE`            | 是否启用自动保存凭证更新。默认为启用状态，将在每次登录/切换账号成功时以及每 24 小时自动更新 auth 文件。设为 `false` 禁用。                                          | `true`    |
-| `MAX_RETRIES`                   | 请求失败后的最大重试次数（仅对假流式和非流式生效）。                                                                                                                | `3`       |
-| `RETRY_DELAY`                   | 两次重试之间的间隔（毫秒）。                                                                                                                                        | `2000`    |
-| `SWITCH_ON_USES`                | 自动切换帐户前允许的请求次数（设为 `0` 禁用）。                                                                                                                     | `40`      |
-| `FAILURE_THRESHOLD`             | 切换帐户前允许的连续失败次数（设为 `0` 禁用）。                                                                                                                     | `3`       |
-| `IMMEDIATE_SWITCH_STATUS_CODES` | 触发立即切换帐户的 HTTP 状态码（逗号分隔，设为空值以禁用）。                                                                                                        | `429,503` |
-| `MAX_CONTEXTS`                  | 最大同时登录的账号数量。同时登录的账号切换更快，无需重新登录。数值越大内存消耗越高（约：1 个账号 ~700MB，2 个账号 ~950MB，3 个账号 ~1100MB）。设为 `0` 表示无限制。 | `1`       |
-| `HTTP_PROXY`                    | 用于访问 Google 服务的 HTTP 代理地址。                                                                                                                              | 无        |
-| `HTTPS_PROXY`                   | 用于访问 Google 服务的 HTTPS 代理地址。                                                                                                                             | 无        |
-| `NO_PROXY`                      | 不经过代理的地址列表（逗号分隔）。项目已内置自动绕过本地地址（localhost, 127.0.0.1, 0.0.0.0），通常无需手动配置本地绕过。                                           | 无        |
+| 变量名                          | 描述                                                                              | 默认值    |
+| :------------------------------ | :-------------------------------------------------------------------------------- | :-------- |
+| `WS_PORT`                       | 浏览器会话连接服务端时使用的 WebSocket 端口。                                     | `9997`    |
+| `ROUND`                         | 会话选择策略，支持 `round`（轮询）和 `random`（随机）。                           | `round`   |
+| `BROWSER_WS_ERROR_THRESHOLD`    | 单个浏览器会话累计 WebSocket / 浏览器错误达到该阈值后会被自动禁用。               | `3`       |
+| `MAX_RETRIES`                   | 单次请求失败后的最大重试次数。                                                    | `3`       |
+| `RETRY_DELAY`                   | 两次重试之间的间隔，单位毫秒。                                                    | `2000`    |
+| `SWITCH_ON_USES`                | 单个浏览器会话累计使用多少次后切换到下一个会话；设为 `0` 表示关闭按使用次数切换。 | `40`      |
+| `FAILURE_THRESHOLD`             | 单个会话连续失败达到多少次后尝试切换到其他会话；设为 `0` 表示关闭按失败次数切换。 | `3`       |
+| `IMMEDIATE_SWITCH_STATUS_CODES` | 触发立即切换会话的 HTTP 状态码列表，多个值用逗号分隔；留空可关闭。                | `429,503` |
 
 #### 🗒️ 其他配置
 
-| 变量名                     | 描述                                                                                              | 默认值   |
-| :------------------------- | :------------------------------------------------------------------------------------------------ | :------- |
-| `STREAMING_MODE`           | 流式传输模式。`real` 为真流式，`fake` 为假流式，默认使用假流式。注意：Canvas 在真流式下可能报错。 | `fake`   |
-| `FORCE_THINKING`           | 强制为所有请求启用思考模式。                                                                      | `false`  |
-| `FORCE_WEB_SEARCH`         | 强制为所有请求启用网络搜索。                                                                      | `false`  |
-| `FORCE_URL_CONTEXT`        | 强制为所有请求启用 URL 上下文。                                                                   | `false`  |
-| `CAMOUFOX_EXECUTABLE_PATH` | Camoufox 浏览器的可执行文件路径（支持绝对或相对路径）。仅在手动下载浏览器时需配置。               | 自动检测 |
+| 变量名              | 描述                                             | 默认值  |
+| :------------------ | :----------------------------------------------- | :------ |
+| `STREAMING_MODE`    | 流式传输模式。`real` 为真流式，`fake` 为假流式。 | `fake`  |
+| `FORCE_THINKING`    | 强制为所有请求启用思考模式。                     | `false` |
+| `FORCE_WEB_SEARCH`  | 强制为所有请求启用联网搜索。                     | `false` |
+| `FORCE_URL_CONTEXT` | 强制为所有请求启用 URL 上下文。                  | `false` |
 
-### ⚡ 账号自动填充
+### 🔌 浏览器会话连接
 
-为了简化多个账号的登录流程，您可以通过配置 `users.csv` 文件来实现自动填充：
+当前版本不再读取本地 `auth` 文件，也不包含 `setup-auth` 初始化脚本。正确的使用方式是：
 
-1. 在项目根目录创建 `users.csv`。
-2. 格式为：`email,password`（每行一个）。
-3. 运行 `npm run setup-auth` 后按提示选择账号。
-
-> 📖 详细配置说明请参阅：[账号自动填充指南](docs/zh/auto-fill-guide.md)
+1. 启动服务端，并确保 `PORT` 和 `WS_PORT` 都能被建立会话的浏览器访问到。
+2. 打开控制台查看当前 `WS_PORT` 和连接状态。
+3. 在浏览器中打开 [https://gemini.google.com/share/b94de199e6f5](https://gemini.google.com/share/b94de199e6f5)。
+4. 在页面中填写浏览器标志和服务端 WebSocket 地址。
+5. 等待状态页出现在线会话后，再开始调用 API。
 
 ### 🧠 模型列表配置
 
 编辑 `configs/models.json` 以自定义可用模型及其设置。
 
-> 💡 **提示：** 思考参数预留了通过模型后缀名来设置的功能，支持在模型名后面通过 `-THINKING_LEVEL` 或 `(THINKING_LEVEL)` 来设置（`THINKING_LEVEL` 支持 `high`、`low`、`medium`、`minimal`，不区分大小写）。例如：`gemini-3-flash-preview(minimal)` 或 `gemini-3-flash-preview-minimal`。
+> 💡 **提示：** 思考参数支持通过模型名后缀设置，可以在模型名后追加 `-THINKING_LEVEL` 或 `(THINKING_LEVEL)`，其中 `THINKING_LEVEL` 支持 `high`、`medium`、`low`、`minimal`，不区分大小写。例如：`gemini-2.5-flash-minimal` 或 `gemini-2.5-flash(minimal)`。
 >
-> 真假流式也支持通过模型名后缀覆盖，支持在模型名最后追加 `-real` 或 `-fake`。该后缀优先级高于系统的真假流式，但只会在流式请求中生效。例如：`gemini-3-flash-preview-fake`。若和思考后缀同时使用，真假流后缀必须放在最后，例如：`gemini-3-flash-preview-minimal-fake` 或 `gemini-3-flash-preview(minimal)-real`。
+> 流式模式也支持通过模型名后缀覆盖，可在模型名最后追加 `-real` 或 `-fake`。该后缀优先级高于系统 `STREAMING_MODE`，但只在流式请求中生效。例如：`gemini-2.5-flash-minimal-fake`。
 
 ## 📄 许可证
 

@@ -256,7 +256,17 @@
                                 </svg>
                                 {{ tf("browserSessionsHeading", "Browser Sessions") }}
                             </h3>
-                            <button class="action-btn" @click="refresh">{{ tf("refreshLabel", "Refresh") }}</button>
+                            <div class="section-actions">
+                                <a
+                                    class="status-link"
+                                    href="https://gemini.google.com/share/b94de199e6f5"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    {{ tf("newSessionLinkLabel", "新建会话点击此处") }}
+                                </a>
+                                <button class="action-btn" @click="refresh">{{ tf("refreshLabel", "Refresh") }}</button>
+                            </div>
                         </div>
                         <div v-if="sessions.length === 0" class="empty-state">
                             {{ tf("noBrowserSessions", "No browser sessions are currently connected.") }}
@@ -1260,6 +1270,13 @@ watchEffect(() => {
     align-items: center;
     margin-bottom: 16px;
 }
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
 .status-list,
 .settings-switches,
 .session-list {
@@ -1528,6 +1545,11 @@ watchEffect(() => {
     .page-header-split {
         flex-direction: column;
         align-items: flex-start;
+    }
+    .section-header,
+    .section-actions {
+        align-items: flex-start;
+        flex-direction: column;
     }
     .dashboard-grid {
         grid-template-columns: 1fr;

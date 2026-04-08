@@ -7,7 +7,6 @@
 
 const fs = require("fs");
 const path = require("path");
-const { getProxySummaryFromEnv } = require("./ProxyUtils");
 
 class ConfigLoader {
     constructor(logger) {
@@ -172,14 +171,6 @@ class ConfigLoader {
         this.logger.info(`  Max Retries per Request: ${config.maxRetries} times`);
         this.logger.info(`  Retry Delay: ${config.retryDelay}ms`);
         this.logger.info(`  API Key Source: ${config.apiKeySource}`);
-
-        const proxySummary = getProxySummaryFromEnv();
-        if (!proxySummary.enabled) {
-            this.logger.info("  Proxy: Disabled");
-        } else {
-            this.logger.info(`  Proxy: Enabled (${proxySummary.envKey})`);
-            this.logger.info(`  Proxy Server: ${proxySummary.server}`);
-        }
 
         this.logger.info("=============================================================");
     }

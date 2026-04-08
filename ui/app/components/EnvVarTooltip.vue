@@ -59,10 +59,6 @@ const docSectionMap = {
         en: "%EF%B8%8F-other-configuration",
         zh: "%EF%B8%8F-其他配置",
     },
-    "proxy-config": {
-        en: "-proxy-configuration",
-        zh: "-代理配置",
-    },
 };
 
 // Use ref to track language changes
