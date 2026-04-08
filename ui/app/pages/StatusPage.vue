@@ -551,10 +551,13 @@
                                             {{ tf("browserModelLabel", "Browser / OS") }}:
                                             {{ sessionBrowser(session) }}
                                         </span>
-                                        <span v-if="sessionLastErrorText(session)" class="status-error"
-                                            >{{ tf("lastErrorLabel", "Last Error") }}:
-                                            {{ sessionLastErrorText(session) }}</span
+                                        <span
+                                            v-if="sessionLastErrorText(session)"
+                                            class="status-error session-last-error"
                                         >
+                                            {{ tf("lastErrorLabel", "Last Error") }}:
+                                            {{ sessionLastErrorText(session) }}
+                                        </span>
                                     </div>
                                 </div>
                                 <div class="session-side">
@@ -1845,7 +1848,7 @@ watchEffect(() => {
 .session-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
 }
 .label,
@@ -2013,11 +2016,23 @@ watchEffect(() => {
     gap: 8px 16px;
     font-size: 0.9rem;
 }
+.session-meta > span {
+    min-width: 0;
+}
+.session-last-error {
+    flex: 1 1 100%;
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.5;
+}
 .session-side {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 6px;
+    flex-shrink: 0;
     white-space: nowrap;
     text-align: right;
 }

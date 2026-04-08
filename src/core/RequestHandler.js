@@ -57,6 +57,16 @@ class RequestHandler {
         return sessionId;
     }
 
+    _isRetryLimitReached(retryAttempt) {
+        return retryAttempt >= this.maxRetries;
+    }
+
+    async _waitBeforeRetry() {
+        if (this.retryDelay > 0) {
+            await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+        }
+    }
+
     async _switchToNextSession(currentSessionId, excludedConnectionIds = new Set()) {
         const nextConnection = this.connectionRegistry.switchToNextConnection(
             currentSessionId,
@@ -64,6 +74,18 @@ class RequestHandler {
             excludedConnectionIds
         );
         if (!nextConnection) {
+            const currentConnection = currentSessionId
+                ? this.connectionRegistry.getConnectionBySession(currentSessionId)
+                : null;
+            const availableConnectionCount = this.connectionRegistry.getConnectionCount();
+
+            if (currentConnection && availableConnectionCount === 1) {
+                this.logger.info(
+                    `[Session] No alternate session available. Reusing the only connected session ${this._describeSession(currentSessionId)} for retry.`
+                );
+                return currentSessionId;
+            }
+
             return null;
         }
 
@@ -581,15 +603,19 @@ class RequestHandler {
             if (useRealStream) {
                 let currentQueue = messageQueue;
                 let initialMessage;
+                let retryAttempt = 1;
                 let skipFinalFailureSwitch = false;
                 const immediateSwitchTracker = this._createImmediateSwitchTracker(sessionId);
 
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
+                while (retryAttempt <= this.maxRetries) {
                     this._forwardRequest(proxyRequest, sessionId);
                     initialMessage = await currentQueue.dequeue();
 
                     if (initialMessage.event_type === "error" && this._shouldSwitchSessionOnError(initialMessage)) {
+                        if (this._isRetryLimitReached(retryAttempt)) {
+                            skipFinalFailureSwitch = true;
+                            break;
+                        }
                         this.logger.warn(
                             `[Request] OpenAI real stream ${this._describeErrorForSessionSwitch(initialMessage)}, switching session and retrying...`
                         );
@@ -610,7 +636,9 @@ class RequestHandler {
                         } catch {
                             /* empty */
                         }
+                        await this._waitBeforeRetry();
                         this._advanceProxyRequestAttempt(proxyRequest);
+                        retryAttempt++;
                         currentQueue = this.connectionRegistry.createMessageQueue(
                             requestId,
                             sessionId,
@@ -672,7 +700,14 @@ class RequestHandler {
                 }
 
                 try {
-                    const result = await this._executeRequestWithRetries(proxyRequest, messageQueue, sessionId);
+                    const result = await this._executeBufferedRequestWithRetries(
+                        proxyRequest,
+                        messageQueue,
+                        sessionId,
+                        {
+                            timeout: isOpenAIStream ? this.timeouts.FAKE_STREAM : undefined,
+                        }
+                    );
 
                     if (!result.success) {
                         this._logFinalRequestFailure(result.error, "OpenAI fake/non-stream");
@@ -697,9 +732,6 @@ class RequestHandler {
                         return;
                     }
 
-                    // Use the queue that successfully received the initial message
-                    const activeQueue = result.queue;
-
                     if (isOpenAIStream) {
                         // Fake stream - ensure headers are set before sending data
                         if (!res.headersSent) {
@@ -713,42 +745,8 @@ class RequestHandler {
                         if (connectionMaintainer) clearTimeout(connectionMaintainer);
 
                         this.logger.info(`[Request] OpenAI streaming response (Fake Mode) started...`);
-                        let fullBody = "";
-                        let hadStreamError = false;
                         try {
-                            // eslint-disable-next-line no-constant-condition
-                            while (true) {
-                                const message = await activeQueue.dequeue(this.timeouts.FAKE_STREAM);
-                                if (message.type === "STREAM_END") {
-                                    break;
-                                }
-
-                                if (message.event_type === "error") {
-                                    this.logger.error(
-                                        `[Request] Error received during OpenAI fake stream: ${message.message}`
-                                    );
-                                    hadStreamError = true;
-                                    // Check if response is still writable before attempting to write
-                                    if (this._isResponseWritable(res)) {
-                                        try {
-                                            res.write(
-                                                `data: ${JSON.stringify({ error: { code: 500, message: message.message, type: "api_error" } })}\n\n`
-                                            );
-                                        } catch (writeError) {
-                                            this.logger.debug(
-                                                `[Request] Failed to write error to OpenAI fake stream: ${writeError.message}`
-                                            );
-                                        }
-                                    }
-                                    break;
-                                }
-
-                                if (message.data) fullBody += message.data;
-                            }
-                            if (hadStreamError) {
-                                // Backend errored; don't attempt to translate/send a "normal" stream afterwards.
-                                return;
-                            }
+                            const fullBody = result.bufferedBody;
                             const streamState = {};
                             const translatedChunk = this.formatConverter.translateGoogleToOpenAIStream(
                                 fullBody,
@@ -778,7 +776,7 @@ class RequestHandler {
                         }
                     } else {
                         // Non-stream
-                        await this._sendOpenAINonStreamResponse(activeQueue, res, model);
+                        this._sendOpenAINonStreamResponseFromBody(result.bufferedBody, res, model);
                     }
                 } finally {
                     if (connectionMaintainer) clearTimeout(connectionMaintainer);
@@ -913,15 +911,19 @@ class RequestHandler {
             if (useRealStream) {
                 let currentQueue = messageQueue;
                 let initialMessage;
+                let retryAttempt = 1;
                 let skipFinalFailureSwitch = false;
                 const immediateSwitchTracker = this._createImmediateSwitchTracker(sessionId);
 
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
+                while (retryAttempt <= this.maxRetries) {
                     this._forwardRequest(proxyRequest, sessionId);
                     initialMessage = await currentQueue.dequeue();
 
                     if (initialMessage.event_type === "error" && this._shouldSwitchSessionOnError(initialMessage)) {
+                        if (this._isRetryLimitReached(retryAttempt)) {
+                            skipFinalFailureSwitch = true;
+                            break;
+                        }
                         this.logger.warn(
                             `[Request] OpenAI Response API real stream ${this._describeErrorForSessionSwitch(initialMessage)}, switching session and retrying...`
                         );
@@ -942,7 +944,9 @@ class RequestHandler {
                         } catch {
                             /* empty */
                         }
+                        await this._waitBeforeRetry();
                         this._advanceProxyRequestAttempt(proxyRequest);
+                        retryAttempt++;
                         currentQueue = this.connectionRegistry.createMessageQueue(
                             requestId,
                             sessionId,
@@ -1006,7 +1010,14 @@ class RequestHandler {
                 }
 
                 try {
-                    const result = await this._executeRequestWithRetries(proxyRequest, messageQueue, sessionId);
+                    const result = await this._executeBufferedRequestWithRetries(
+                        proxyRequest,
+                        messageQueue,
+                        sessionId,
+                        {
+                            timeout: isOpenAIStream ? this.timeouts.FAKE_STREAM : undefined,
+                        }
+                    );
 
                     if (!result.success) {
                         this._logFinalRequestFailure(result.error, "OpenAI Response API fake/non-stream");
@@ -1031,9 +1042,6 @@ class RequestHandler {
                         return;
                     }
 
-                    // Use the queue that successfully received the initial message
-                    const activeQueue = result.queue;
-
                     if (isOpenAIStream) {
                         // Fake stream - ensure headers are set before sending data
                         if (!res.headersSent) {
@@ -1047,52 +1055,9 @@ class RequestHandler {
                         if (connectionMaintainer) clearTimeout(connectionMaintainer);
 
                         this.logger.info(`[Request] OpenAI Response API streaming response (Fake Mode) started...`);
-                        let fullBody = "";
                         if (res.__responseApiSeq == null) res.__responseApiSeq = 0;
-                        let hadStreamError = false;
                         try {
-                            // eslint-disable-next-line no-constant-condition
-                            while (true) {
-                                const message = await activeQueue.dequeue(this.timeouts.FAKE_STREAM);
-                                if (message.type === "STREAM_END") {
-                                    break;
-                                }
-
-                                if (message.event_type === "error") {
-                                    this.logger.error(
-                                        `[Request] Error received during OpenAI Response API fake stream: ${message.message}`
-                                    );
-                                    hadStreamError = true;
-                                    // Check if response is still writable before attempting to write
-                                    if (this._isResponseWritable(res)) {
-                                        try {
-                                            res.__responseApiSeq += 1;
-                                            res.write(
-                                                `event: error\ndata: ${JSON.stringify({
-                                                    code: "api_error",
-                                                    message: message.message,
-                                                    param: null,
-                                                    sequence_number: res.__responseApiSeq,
-                                                    type: "error",
-                                                })}\n\n`
-                                            );
-                                        } catch (writeError) {
-                                            this.logger.debug(
-                                                `[Request] Failed to write error to OpenAI Response API fake stream: ${writeError.message}`
-                                            );
-                                        }
-                                    }
-                                    break;
-                                }
-
-                                if (message.data) fullBody += message.data;
-                            }
-
-                            // If backend errored, don't attempt to translate/send a "normal" Responses stream afterwards.
-                            if (hadStreamError) {
-                                return;
-                            }
-
+                            const fullBody = result.bufferedBody;
                             const streamState = {};
                             streamState.responseDefaults = responseDefaults;
                             const translatedChunk = this.formatConverter.translateGoogleToResponseAPIStream(
@@ -1122,7 +1087,12 @@ class RequestHandler {
                         }
                     } else {
                         // Non-stream
-                        await this._sendOpenAIResponseAPINonStreamResponse(activeQueue, res, model, responseDefaults);
+                        this._sendOpenAIResponseAPINonStreamResponseFromBody(
+                            result.bufferedBody,
+                            res,
+                            model,
+                            responseDefaults
+                        );
                     }
                 } finally {
                     if (connectionMaintainer) clearTimeout(connectionMaintainer);
@@ -1210,15 +1180,19 @@ class RequestHandler {
             if (useRealStream) {
                 let currentQueue = messageQueue;
                 let initialMessage;
+                let retryAttempt = 1;
                 let skipFinalFailureSwitch = false;
                 const immediateSwitchTracker = this._createImmediateSwitchTracker(sessionId);
 
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
+                while (retryAttempt <= this.maxRetries) {
                     this._forwardRequest(proxyRequest, sessionId);
                     initialMessage = await currentQueue.dequeue();
 
                     if (initialMessage.event_type === "error" && this._shouldSwitchSessionOnError(initialMessage)) {
+                        if (this._isRetryLimitReached(retryAttempt)) {
+                            skipFinalFailureSwitch = true;
+                            break;
+                        }
                         this.logger.warn(
                             `[Request] Claude real stream ${this._describeErrorForSessionSwitch(initialMessage)}, switching session and retrying...`
                         );
@@ -1239,7 +1213,9 @@ class RequestHandler {
                         } catch {
                             /* empty */
                         }
+                        await this._waitBeforeRetry();
                         this._advanceProxyRequestAttempt(proxyRequest);
+                        retryAttempt++;
                         currentQueue = this.connectionRegistry.createMessageQueue(
                             requestId,
                             sessionId,
@@ -1298,7 +1274,14 @@ class RequestHandler {
                 }
 
                 try {
-                    const result = await this._executeRequestWithRetries(proxyRequest, messageQueue, sessionId);
+                    const result = await this._executeBufferedRequestWithRetries(
+                        proxyRequest,
+                        messageQueue,
+                        sessionId,
+                        {
+                            timeout: isClaudeStream ? this.timeouts.FAKE_STREAM : undefined,
+                        }
+                    );
 
                     if (!result.success) {
                         this._logFinalRequestFailure(result.error, "Claude fake/non-stream");
@@ -1322,9 +1305,6 @@ class RequestHandler {
                         return;
                     }
 
-                    // Use the queue that successfully received the initial message
-                    const activeQueue = result.queue;
-
                     if (isClaudeStream) {
                         // Fake stream
                         if (!res.headersSent) {
@@ -1337,48 +1317,8 @@ class RequestHandler {
                         if (connectionMaintainer) clearTimeout(connectionMaintainer);
 
                         this.logger.info(`[Request] Claude streaming response (Fake Mode) started...`);
-                        let fullBody = "";
-                        let hadStreamError = false;
                         try {
-                            // eslint-disable-next-line no-constant-condition
-                            while (true) {
-                                const message = await activeQueue.dequeue(this.timeouts.FAKE_STREAM);
-                                if (message.type === "STREAM_END") {
-                                    break;
-                                }
-
-                                if (message.event_type === "error") {
-                                    this.logger.error(
-                                        `[Request] Error received during Claude fake stream: ${message.message}`
-                                    );
-                                    hadStreamError = true;
-                                    // Check if response is still writable before attempting to write
-                                    if (this._isResponseWritable(res)) {
-                                        try {
-                                            res.write(
-                                                `event: error\ndata: ${JSON.stringify({
-                                                    error: {
-                                                        message: message.message,
-                                                        type: "api_error",
-                                                    },
-                                                    type: "error",
-                                                })}\n\n`
-                                            );
-                                        } catch (writeError) {
-                                            this.logger.debug(
-                                                `[Request] Failed to write error to Claude fake stream: ${writeError.message}`
-                                            );
-                                        }
-                                    }
-                                    break;
-                                }
-
-                                if (message.data) fullBody += message.data;
-                            }
-                            if (hadStreamError) {
-                                // Backend errored; don't attempt to translate/send a "normal" stream afterwards.
-                                return;
-                            }
+                            const fullBody = result.bufferedBody;
                             const streamState = {};
                             const translatedChunk = this.formatConverter.translateGoogleToClaudeStream(
                                 fullBody,
@@ -1407,7 +1347,7 @@ class RequestHandler {
                         }
                     } else {
                         // Non-stream
-                        await this._sendClaudeNonStreamResponse(activeQueue, res, model);
+                        this._sendClaudeNonStreamResponseFromBody(result.bufferedBody, res, model);
                     }
                 } finally {
                     if (connectionMaintainer) clearTimeout(connectionMaintainer);
@@ -1746,27 +1686,11 @@ class RequestHandler {
     }
 
     async _sendClaudeNonStreamResponse(messageQueue, res, model) {
-        let fullBody = "";
-        let receiving = true;
-        while (receiving) {
-            const message = await messageQueue.dequeue();
-            if (message.type === "STREAM_END") {
-                this.logger.info("[Request] Claude received end signal.");
-                receiving = false;
-                break;
-            }
+        const fullBody = await this._readBufferedResponseBody(messageQueue);
+        this._sendClaudeNonStreamResponseFromBody(fullBody, res, model);
+    }
 
-            if (message.event_type === "error") {
-                this.logger.error(`[Adapter] Error during Claude non-stream conversion: ${message.message}`);
-                this._sendClaudeErrorResponse(res, 500, "api_error", message.message);
-                return;
-            }
-
-            if (message.event_type === "chunk" && message.data) {
-                fullBody += message.data;
-            }
-        }
-
+    _sendClaudeNonStreamResponseFromBody(fullBody, res, model) {
         try {
             const googleResponse = JSON.parse(fullBody);
             const claudeResponse = this.formatConverter.convertGoogleToClaudeNonStream(googleResponse, model);
@@ -1895,7 +1819,9 @@ class RequestHandler {
         scheduleNextKeepAlive();
 
         try {
-            const result = await this._executeRequestWithRetries(proxyRequest, messageQueue, sessionId);
+            const result = await this._executeBufferedRequestWithRetries(proxyRequest, messageQueue, sessionId, {
+                timeout: this.timeouts.FAKE_STREAM,
+            });
 
             if (!result.success) {
                 clearTimeout(connectionMaintainer);
@@ -1926,9 +1852,6 @@ class RequestHandler {
                 return;
             }
 
-            // Use the queue that successfully received the initial message
-            const activeQueue = result.queue;
-
             if (!res.headersSent) {
                 res.setHeader("Content-Type", "text/event-stream");
                 res.setHeader("Cache-Control", "no-cache");
@@ -1938,45 +1861,7 @@ class RequestHandler {
             clearTimeout(connectionMaintainer);
 
             // Read all data chunks until STREAM_END to handle potential fragmentation
-            let fullData = "";
-            let hadStreamError = false;
-            try {
-                // eslint-disable-next-line no-constant-condition
-                while (true) {
-                    const message = await activeQueue.dequeue(this.timeouts.FAKE_STREAM); // 5 min timeout for fake streaming
-                    if (message.type === "STREAM_END") {
-                        break;
-                    }
-
-                    if (message.event_type === "error") {
-                        this.logger.error(`[Request] Error received during Gemini pseudo-stream: ${message.message}`);
-                        hadStreamError = true;
-                        this._handleRequestError({ message: message.message }, res, "gemini");
-                        break;
-                    }
-
-                    if (message.data) {
-                        fullData += message.data;
-                    }
-                }
-            } catch (error) {
-                // Handle timeout or other errors during streaming
-                // Don't attempt to write if it's a connection reset or if response is destroyed
-                if (!this._isConnectionResetError(error)) {
-                    // Classify error type and send appropriate response
-                    this._handleFakeStreamError(error, res, "gemini");
-                } else {
-                    this.logger.debug(
-                        "[Request] Gemini pseudo-stream interrupted by connection reset, skipping error write"
-                    );
-                }
-                // Return early to prevent JSON parsing of incomplete data
-                return;
-            }
-            if (hadStreamError) {
-                // Backend errored; don't attempt to parse/split/send "normal" chunks afterwards.
-                return;
-            }
+            const fullData = result.bufferedBody;
 
             try {
                 const googleResponse = JSON.parse(fullData);
@@ -2146,15 +2031,19 @@ class RequestHandler {
         this.logger.info(`[Request] Request dispatched to browser for processing...`);
         let currentQueue = messageQueue;
         let headerMessage;
+        let retryAttempt = 1;
         let skipFinalFailureSwitch = false;
         const immediateSwitchTracker = this._createImmediateSwitchTracker(sessionId);
 
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
+        while (retryAttempt <= this.maxRetries) {
             this._forwardRequest(proxyRequest, sessionId);
             headerMessage = await currentQueue.dequeue();
 
             if (headerMessage.event_type === "error" && this._shouldSwitchSessionOnError(headerMessage)) {
+                if (this._isRetryLimitReached(retryAttempt)) {
+                    skipFinalFailureSwitch = true;
+                    break;
+                }
                 this.logger.warn(
                     `[Request] Gemini real stream ${this._describeErrorForSessionSwitch(headerMessage)}, switching session and retrying...`
                 );
@@ -2176,7 +2065,9 @@ class RequestHandler {
                     /* empty */
                 }
 
+                await this._waitBeforeRetry();
                 this._advanceProxyRequestAttempt(proxyRequest);
+                retryAttempt++;
                 currentQueue = this.connectionRegistry.createMessageQueue(
                     proxyRequest.request_id,
                     sessionId,
@@ -2299,7 +2190,9 @@ class RequestHandler {
         this.logger.info(`[Request] Entering non-stream processing mode...`);
 
         try {
-            const result = await this._executeRequestWithRetries(proxyRequest, messageQueue, sessionId);
+            const result = await this._executeBufferedRequestWithRetries(proxyRequest, messageQueue, sessionId, {
+                collect: "buffer",
+            });
 
             if (!result.success) {
                 // If retries failed, return the last browser-side error
@@ -2320,32 +2213,8 @@ class RequestHandler {
                 return this._sendErrorResponse(res, result.error.status || 500, result.error.message);
             }
 
-            // Use the queue that successfully received the initial message
-            const activeQueue = result.queue;
-
             const headerMessage = result.message;
-            const chunks = [];
-            let receiving = true;
-            while (receiving) {
-                const message = await activeQueue.dequeue();
-                if (message.type === "STREAM_END") {
-                    this.logger.info("[Request] Received end signal, data reception complete.");
-                    receiving = false;
-                    break;
-                }
-
-                if (message.event_type === "error") {
-                    this.logger.error(`[Request] Error received during Gemini non-stream: ${message.message}`);
-                    this._sendErrorResponse(res, 500, message.message);
-                    return;
-                }
-
-                if (message.event_type === "chunk" && message.data) {
-                    chunks.push(Buffer.from(message.data));
-                }
-            }
-
-            const fullBodyBuffer = Buffer.concat(chunks);
+            const fullBodyBuffer = result.bufferedBody;
 
             try {
                 const fullResponse = JSON.parse(fullBodyBuffer.toString());
@@ -2409,7 +2278,43 @@ class RequestHandler {
         return fullBody;
     }
 
-    async _executeRequestWithRetries(proxyRequest, messageQueue, initialSessionId) {
+    async _executeBufferedRequestWithRetries(proxyRequest, messageQueue, initialSessionId, bufferOptions = {}) {
+        return this._executeRequestWithRetries(proxyRequest, messageQueue, initialSessionId, {
+            onSuccessfulInitialResponse: async ({ queue }) => ({
+                bufferedBody: await this._readBufferedResponseBody(queue, bufferOptions),
+            }),
+        });
+    }
+
+    async _readBufferedResponseBody(messageQueue, options = {}) {
+        const { collect = "string", timeout } = options;
+        const stringChunks = [];
+        const bufferChunks = [];
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const message = timeout == null ? await messageQueue.dequeue() : await messageQueue.dequeue(timeout);
+
+            if (message.type === "STREAM_END") {
+                return collect === "buffer" ? Buffer.concat(bufferChunks) : stringChunks.join("");
+            }
+
+            if (message.event_type === "error") {
+                throw new Error(JSON.stringify(message));
+            }
+
+            if (message.event_type === "chunk" && message.data) {
+                if (collect === "buffer") {
+                    bufferChunks.push(Buffer.from(message.data));
+                } else {
+                    stringChunks.push(message.data);
+                }
+            }
+        }
+    }
+
+    async _executeRequestWithRetries(proxyRequest, messageQueue, initialSessionId, options = {}) {
+        const { onSuccessfulInitialResponse } = options;
         let lastError = null;
         let currentQueue = messageQueue;
         let sessionId = initialSessionId;
@@ -2440,8 +2345,17 @@ class RequestHandler {
                     throw new Error(JSON.stringify(initialMessage));
                 }
 
+                const successResult =
+                    typeof onSuccessfulInitialResponse === "function"
+                        ? (await onSuccessfulInitialResponse({
+                              message: initialMessage,
+                              queue: currentQueue,
+                              sessionId,
+                          })) || {}
+                        : {};
+
                 // Success, return the initial message and the queue that received it
-                return { message: initialMessage, queue: currentQueue, success: true };
+                return { ...successResult, message: initialMessage, queue: currentQueue, success: true };
             } catch (error) {
                 // Parse the structured error message
                 let errorPayload;
@@ -2458,6 +2372,19 @@ class RequestHandler {
 
                 if (this._isQueueTimeoutError(error)) {
                     this._handleQueueTimeout(error, proxyRequest.request_id);
+                }
+
+                if (isUserAbortedError(error) || isUserAbortedError(errorPayload)) {
+                    lastError = {
+                        ...errorPayload,
+                        isUserAborted: true,
+                        message: errorPayload.message || "The user aborted a request",
+                        status: errorPayload.status || 499,
+                    };
+                    this.logger.info(
+                        `[Request] Request #${proxyRequest.request_id} was aborted by user; stopping without retry.`
+                    );
+                    break;
                 }
 
                 // Stop retrying immediately if the queue is closed
@@ -2478,6 +2405,10 @@ class RequestHandler {
                         reason,
                         status: 503,
                     };
+                    if (this._isRetryLimitReached(retryAttempt)) {
+                        lastError = { ...lastError, skipSessionSwitch: true };
+                        break;
+                    }
                     this.logger.warn(
                         `[Request] ${this._describeErrorForSessionSwitch(lastError)}, switching session and retrying...`
                     );
@@ -2508,7 +2439,9 @@ class RequestHandler {
                     this.logger.debug(
                         `[Request] Creating new message queue after session switch for request #${proxyRequest.request_id} (switching from session ${this._describeSession(currentQueueSessionId)} to ${this._describeSession(sessionId)})`
                     );
+                    await this._waitBeforeRetry();
                     this._advanceProxyRequestAttempt(proxyRequest);
+                    retryAttempt++;
                     currentQueue = this.connectionRegistry.createMessageQueue(
                         proxyRequest.request_id,
                         sessionId,
@@ -2521,6 +2454,10 @@ class RequestHandler {
                 lastError = errorPayload;
 
                 if (this._shouldSwitchSessionOnError(errorPayload)) {
+                    if (this._isRetryLimitReached(retryAttempt)) {
+                        lastError = { ...errorPayload, skipSessionSwitch: true };
+                        break;
+                    }
                     this.logger.warn(
                         `[Request] ${this._describeErrorForSessionSwitch(errorPayload)}, switching session and retrying...`
                     );
@@ -2552,7 +2489,9 @@ class RequestHandler {
                     this.logger.debug(
                         `[Request] Creating new message queue after session switch for request #${proxyRequest.request_id} (switching from session ${this._describeSession(currentQueueSessionId)} to ${this._describeSession(sessionId)})`
                     );
+                    await this._waitBeforeRetry();
                     this._advanceProxyRequestAttempt(proxyRequest);
+                    retryAttempt++;
                     currentQueue = this.connectionRegistry.createMessageQueue(
                         proxyRequest.request_id,
                         sessionId,
@@ -2562,54 +2501,10 @@ class RequestHandler {
                     continue;
                 }
 
-                // Log the warning for the current attempt
                 this.logger.warn(
-                    `[Request] Attempt #${retryAttempt}/${this.maxRetries} for request #${proxyRequest.request_id} failed: ${errorPayload.message}`
+                    `[Request] Request #${proxyRequest.request_id} failed without session switch: ${errorPayload.message}`
                 );
-
-                // If it's the last attempt, break the loop to return failure
-                if (retryAttempt >= this.maxRetries) {
-                    this.logger.error(
-                        `[Request] All ${this.maxRetries} retries failed for request #${proxyRequest.request_id}. Final error: ${errorPayload.message}`
-                    );
-                    break;
-                }
-
-                // Cancel browser request on the original session that owns this queue.
-                // request_attempt_id isolates retries so a delayed cancel cannot abort a newer attempt.
-                // If the session has switched, currentSessionId may differ from currentQueueSessionId.
-                this._cancelBrowserRequest(
-                    proxyRequest.request_id,
-                    currentQueueSessionId,
-                    proxyRequest.request_attempt_id
-                );
-
-                // Explicitly close the old queue before creating a new one
-                // This ensures waitingResolvers are properly rejected even if the session changes
-                try {
-                    currentQueue.close("retry_creating_new_queue");
-                } catch (e) {
-                    this.logger.debug(`[Request] Failed to close old queue before retry: ${e.message}`);
-                }
-
-                // Create a new message queue for the retry with the current session
-                // Note: We keep the same requestId so the browser response routes to the new queue
-                // createMessageQueue will automatically close and remove any existing queue with the same ID from the registry
-                this.logger.debug(
-                    `[Request] Creating new message queue for retry #${retryAttempt + 1} for request #${proxyRequest.request_id} (switching from session ${this._describeSession(currentQueueSessionId)} to ${this._describeSession(sessionId)})`
-                );
-                this._advanceProxyRequestAttempt(proxyRequest);
-                currentQueue = this.connectionRegistry.createMessageQueue(
-                    proxyRequest.request_id,
-                    sessionId,
-                    proxyRequest.request_attempt_id
-                );
-                // Update tracked session id for the new queue
-                currentQueueSessionId = sessionId;
-
-                // Wait before the next retry
-                await new Promise(resolve => setTimeout(resolve, this.retryDelay));
-                retryAttempt++;
+                break;
             }
         }
 
@@ -2775,29 +2670,11 @@ class RequestHandler {
     }
 
     async _sendOpenAIResponseAPINonStreamResponse(messageQueue, res, model, responseDefaults = {}) {
-        let fullBody = "";
-        let receiving = true;
-        while (receiving) {
-            const message = await messageQueue.dequeue();
-            if (message.type === "STREAM_END") {
-                this.logger.info("[Request] OpenAI Response API received end signal.");
-                receiving = false;
-                break;
-            }
+        const fullBody = await this._readBufferedResponseBody(messageQueue);
+        this._sendOpenAIResponseAPINonStreamResponseFromBody(fullBody, res, model, responseDefaults);
+    }
 
-            if (message.event_type === "error") {
-                this.logger.error(
-                    `[Adapter] Error during OpenAI Response API non-stream conversion: ${message.message}`
-                );
-                this._sendErrorResponse(res, 500, message.message);
-                return;
-            }
-
-            if (message.event_type === "chunk" && message.data) {
-                fullBody += message.data;
-            }
-        }
-
+    _sendOpenAIResponseAPINonStreamResponseFromBody(fullBody, res, model, responseDefaults = {}) {
         // Parse and convert to OpenAI Response API format
         try {
             const googleResponse = JSON.parse(fullBody);
@@ -2814,27 +2691,11 @@ class RequestHandler {
     }
 
     async _sendOpenAINonStreamResponse(messageQueue, res, model) {
-        let fullBody = "";
-        let receiving = true;
-        while (receiving) {
-            const message = await messageQueue.dequeue();
-            if (message.type === "STREAM_END") {
-                this.logger.info("[Request] OpenAI received end signal.");
-                receiving = false;
-                break;
-            }
+        const fullBody = await this._readBufferedResponseBody(messageQueue);
+        this._sendOpenAINonStreamResponseFromBody(fullBody, res, model);
+    }
 
-            if (message.event_type === "error") {
-                this.logger.error(`[Adapter] Error during OpenAI non-stream conversion: ${message.message}`);
-                this._sendErrorResponse(res, 500, message.message);
-                return;
-            }
-
-            if (message.event_type === "chunk" && message.data) {
-                fullBody += message.data;
-            }
-        }
-
+    _sendOpenAINonStreamResponseFromBody(fullBody, res, model) {
         // Parse and convert to OpenAI format
         try {
             const googleResponse = JSON.parse(fullBody);
@@ -3341,7 +3202,7 @@ class RequestHandler {
         const connection = this.connectionRegistry.getConnectionBySession(sessionId);
         if (connection) {
             const usageCount = this._incrementSessionUsageCount(sessionId);
-            this.logger.debug(
+            this.logger.info(
                 `[Request] Forwarding request #${proxyRequest.request_id} via session ${this._describeSession(sessionId)}` +
                     ` (attempt=${proxyRequest.request_attempt_id}, usage=${usageCount})`
             );
