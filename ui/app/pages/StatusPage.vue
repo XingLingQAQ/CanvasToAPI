@@ -204,7 +204,10 @@
                                         <path d="M8 5v14"></path>
                                         <path d="M16 5v14"></path>
                                     </svg>
-                                    {{ t("wsPortLabel") }} </span
+                                    <span>
+                                        {{ t("wsPortLabel") }}
+                                        <EnvVarTooltip env-var="WS_PORT" doc-section="proxy-config" />
+                                    </span> </span
                                 ><span class="value mono">{{ state.wsPort }}</span>
                             </div>
                             <div class="status-item">
@@ -228,7 +231,10 @@
                                         <circle cx="15" cy="12" r="2"></circle>
                                         <circle cx="11" cy="18" r="2"></circle>
                                     </svg>
-                                    {{ tf("selectionStrategyLabel", "Selection Strategy") }} </span
+                                    <span>
+                                        {{ tf("selectionStrategyLabel", "Selection Strategy") }}
+                                        <EnvVarTooltip env-var="ROUND" doc-section="proxy-config" />
+                                    </span> </span
                                 ><span class="value mono">{{ selectionStrategyText }}</span>
                             </div>
                         </div>
@@ -1150,6 +1156,76 @@
                 </div>
             </div>
         </main>
+
+        <el-affix
+            :offset="90"
+            position="bottom"
+            class="mobile-only"
+            style="position: fixed; right: 0; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); z-index: 999"
+        >
+            <div class="floating-actions" :class="{ 'is-expanded': state.floatingActionsExpanded }">
+                <button
+                    class="floating-btn toggle-btn primary-btn"
+                    :class="{ 'is-active': state.floatingActionsExpanded }"
+                    :title="state.floatingActionsExpanded ? t('collapse') : t('expand')"
+                    @click="state.floatingActionsExpanded = !state.floatingActionsExpanded"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+                <button class="floating-btn logout-button secondary-btn" :title="t('logout')" @click="handleLogout">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                </button>
+                <button
+                    class="floating-btn lang-switcher secondary-btn"
+                    :title="t('switchLanguage')"
+                    @click="toggleLanguage"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m5 8 6 6" />
+                        <path d="m4 14 6-6 2-3" />
+                        <path d="M2 5h12" />
+                        <path d="M7 2h1" />
+                        <path d="m22 22-5-10-5 10" />
+                        <path d="M14 18h6" />
+                    </svg>
+                </button>
+            </div>
+        </el-affix>
     </div>
 </template>
 
@@ -1173,6 +1249,7 @@ const state = reactive({
     currentLang: I18n.getLang(),
     currentVersion: "",
     debugMode: false,
+    floatingActionsExpanded: false,
     forceThinking: false,
     forceUrlContext: false,
     forceWebSearch: false,
@@ -1911,6 +1988,101 @@ watchEffect(() => {
     max-width: 100%;
     width: 100%;
 }
+.mobile-only {
+    display: block;
+}
+.floating-actions {
+    align-items: flex-end;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 12px;
+    transition: all @transition-normal;
+}
+.floating-actions:not(.is-expanded) {
+    opacity: 0.5;
+    transform: translateX(15px);
+}
+.floating-actions:not(.is-expanded):hover {
+    opacity: 1;
+    transform: translateX(0);
+}
+.floating-actions.is-expanded {
+    opacity: 1;
+    transform: translateX(-30px);
+}
+.floating-btn {
+    align-items: center;
+    backdrop-filter: blur(10px);
+    background: @affix-button-bg;
+    border: 1px solid @affix-button-border;
+    border-radius: @border-radius-circle 0 0 @border-radius-circle;
+    box-shadow: @affix-button-shadow;
+    cursor: pointer;
+    display: flex;
+    height: @affix-button-size;
+    justify-content: center;
+    position: relative;
+    transition: all @transition-normal;
+    width: @affix-button-size;
+    z-index: 1;
+}
+.floating-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.floating-btn svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+    transition: transform @transition-normal;
+}
+.floating-btn.secondary-btn {
+    opacity: 0;
+    transform: translateY(20px) scale(0.5);
+    pointer-events: none;
+    visibility: hidden;
+    border-radius: @border-radius-circle;
+}
+.floating-btn.lang-switcher {
+    color: @text-secondary;
+}
+.floating-btn.lang-switcher:hover:not(:disabled) {
+    background: @primary-color;
+    box-shadow: @affix-button-hover-shadow;
+    color: @background-white;
+    transform: scale(1.05);
+}
+.floating-btn.logout-button {
+    color: @text-secondary;
+}
+.floating-btn.logout-button:hover:not(:disabled) {
+    background: @error-color;
+    box-shadow: @affix-button-hover-shadow;
+    color: @background-white;
+    transform: scale(1.05);
+}
+.floating-btn.toggle-btn {
+    color: @text-secondary;
+    z-index: 2;
+}
+.floating-btn.toggle-btn:hover:not(:disabled) {
+    background: @background-white;
+    color: @primary-color;
+}
+.floating-btn.toggle-btn.is-active {
+    background: @primary-color;
+    color: @text-on-primary;
+    border-radius: @border-radius-circle;
+}
+.floating-btn.toggle-btn.is-active svg {
+    transform: rotate(45deg);
+}
+.floating-actions.is-expanded .secondary-btn {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    visibility: visible;
+}
 @media (max-width: 768px) {
     .sidebar {
         width: 100%;
@@ -1957,6 +2129,11 @@ watchEffect(() => {
     }
     .session-side {
         align-items: flex-start;
+    }
+}
+@media (min-width: 768px) {
+    .mobile-only {
+        display: none !important;
     }
 }
 </style>

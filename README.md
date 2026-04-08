@@ -199,9 +199,9 @@ services:
 
 编辑 `configs/models.json` 以自定义可用模型及其设置。
 
-> 💡 **提示：** 思考参数支持通过模型名后缀设置，可以在模型名后追加 `-THINKING_LEVEL` 或 `(THINKING_LEVEL)`，其中 `THINKING_LEVEL` 支持 `high`、`medium`、`low`、`minimal`，不区分大小写。例如：`gemini-2.5-flash-minimal` 或 `gemini-2.5-flash(minimal)`。
+> 💡 **提示：** 思考参数支持通过模型名后缀设置，可以在模型名后追加 `-THINKING_LEVEL` 或 `(THINKING_LEVEL)`，其中 `THINKING_LEVEL` 支持 `high`、`medium`、`low`、`minimal`，不区分大小写。例如：`gemini-3-flash-preview(minimal)` 或 `gemini-3-flash-preview-minimal`。
 >
-> 流式模式也支持通过模型名后缀覆盖，可在模型名最后追加 `-real` 或 `-fake`。该后缀优先级高于系统 `STREAMING_MODE`，但只在流式请求中生效。例如：`gemini-2.5-flash-minimal-fake`。
+> 流式模式也支持通过模型名后缀覆盖，可在模型名最后追加 `-real` 或 `-fake`。该后缀优先级高于系统 `STREAMING_MODE`，但只在流式请求中生效。例如：`gemini-3-flash-preview-fake`。若和思考后缀同时使用，真假流后缀必须放在最后，例如：`gemini-3-flash-preview-minimal-fake` 或 `gemini-3-flash-preview(minimal)-real`。
 
 ## 📄 许可证
 

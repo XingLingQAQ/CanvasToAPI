@@ -109,7 +109,6 @@ class StatusRoutes {
                 .toLowerCase();
             if (strategy === "round" || strategy === "random") {
                 this.config.sessionSelectionStrategy = strategy;
-                this.serverSystem.config.sessionSelectionStrategy = strategy;
                 this.logger.info(`[WebUI] Session selection strategy switched to: ${strategy}`);
                 res.status(200).json({
                     message: "settingUpdateSuccess",

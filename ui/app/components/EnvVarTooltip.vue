@@ -65,11 +65,9 @@ const docSectionMap = {
     },
 };
 
-// Use ref to track language changes
 const currentLang = ref(I18n.state.lang);
 const langVersion = ref(I18n.state.version);
 
-// Listen to language changes
 const handleLangChange = lang => {
     currentLang.value = lang;
     langVersion.value = I18n.state.version;
@@ -80,10 +78,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    // Note: I18n doesn't provide a way to remove listeners, but this is fine for this use case
+    // I18n does not currently expose listener cleanup.
 });
 
-// Reactive translation helper
 const t = (key, options) => {
     langVersion.value;
     return I18n.t(key, options);
@@ -138,7 +135,7 @@ const copyEnvVar = () => {
     background-color: #2b2d30;
     border: 1px solid #414243;
     color: #cfd3d8;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.5));
 }
 
 .el-popper.is-dark.custom-theme-tooltip .el-popper__arrow::before {

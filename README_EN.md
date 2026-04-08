@@ -199,9 +199,9 @@ The current version no longer uses local `auth` files or a `setup-auth` bootstra
 
 Edit `configs/models.json` to customize the available models and their settings.
 
-> 💡 **Tip:** Thinking level can be overridden via the model suffix. Append `-THINKING_LEVEL` or `(THINKING_LEVEL)` to the model name, where `THINKING_LEVEL` can be `high`, `medium`, `low`, or `minimal`. Example: `gemini-2.5-flash-minimal` or `gemini-2.5-flash(minimal)`.
+> 💡 **Tip:** Thinking level can be overridden via the model suffix. Append `-THINKING_LEVEL` or `(THINKING_LEVEL)` to the model name, where `THINKING_LEVEL` can be `high`, `medium`, `low`, or `minimal`. Example: `gemini-3-flash-preview(minimal)` or `gemini-3-flash-preview-minimal`.
 >
-> Streaming mode can also be overridden by appending `-real` or `-fake` to the model name. This takes precedence over the global `STREAMING_MODE`, but only for streaming requests. Example: `gemini-2.5-flash-minimal-fake`.
+> Streaming mode can also be overridden by appending `-real` or `-fake` to the end of the model name. This override has higher priority than the system streaming mode, but it only takes effect for streaming requests. For example: `gemini-3-flash-preview-fake`. When used together, the streaming suffix must be last, for example: `gemini-3-flash-preview-minimal-fake` or `gemini-3-flash-preview(minimal)-real`.
 
 ## 📄 License
 
