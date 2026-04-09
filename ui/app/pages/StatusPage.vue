@@ -322,7 +322,7 @@
                                         {{ tf("selectionStrategyLabel", "Selection Strategy") }}
                                         <EnvVarTooltip env-var="ROUND" doc-section="proxy-config" />
                                     </span> </span
-                                ><span class="value mono">{{ selectionStrategyText }}</span>
+                                ><span class="value mono status-text-bold">{{ selectionStrategyText }}</span>
                             </div>
                             <div class="status-item">
                                 <span class="label">
