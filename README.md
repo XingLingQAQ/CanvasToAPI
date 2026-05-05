@@ -156,12 +156,6 @@ services:
 >
 > 📖 详细的 Nginx 配置说明请参阅：[Nginx 反向代理配置文档](docs/zh/nginx-setup.md)
 
-### 🐾 Claw Cloud Run 部署
-
-支持直接部署到 Claw Cloud Run，全托管的容器平台。
-
-> 📖 详细部署说明请参阅：[部署到 Claw Cloud Run](docs/zh/claw-cloud-run.md)
-
 ## 📗 使用 API
 
 ### 🤖 OpenAI 兼容 API

@@ -156,12 +156,6 @@ If you need to access the service through a domain name or put it behind a rever
 >
 > 📖 For detailed Nginx configuration instructions, see: [Nginx Reverse Proxy Configuration](docs/en/nginx-setup.md)
 
-### 🐾 Claw Cloud Run Deployment
-
-Deploy directly on Claw Cloud Run, a fully managed container platform.
-
-> 📖 For detailed deployment instructions, see: [Deploy on Claw Cloud Run](docs/en/claw-cloud-run.md)
-
 ## 📗 API Usage
 
 ### 🤖 OpenAI-Compatible API
